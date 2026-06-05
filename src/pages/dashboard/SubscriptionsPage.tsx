@@ -8,8 +8,8 @@ import {
 
 const TABS = [
   { id: "ledger", label: "Ledger & Stats" },
-  { id: "dating", label: "Dating Subscription" },
-  { id: "ai", label: "AI Subscription" },
+  { id: "app_sub", label: "App Subscription" },
+  { id: "ai_scan", label: "AI Scan" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -21,7 +21,7 @@ export function SubscriptionsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Subscriptions"
-        description="Revenue overview, transaction ledger, dating subscriptions, and AI scan pricing."
+        description="Revenue overview, transaction ledger, app subscriptions, and AI scan packages."
       />
 
       {/* Tab bar */}
@@ -50,13 +50,13 @@ export function SubscriptionsPage() {
         </div>
       )}
 
-      {tab === "dating" && (
+      {tab === "app_sub" && (
         <div className="space-y-6">
           <PlansTab type="dating" />
         </div>
       )}
 
-      {tab === "ai" && (
+      {tab === "ai_scan" && (
         <div className="space-y-6">
           <PlansTab type="ai" />
         </div>

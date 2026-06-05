@@ -211,11 +211,11 @@ export function PlansTab({ type }: PlansTabProps) {
       <div className="flex items-center justify-between">
         <div>
           <p className="font-medium">
-            {isDating ? "Dating subscription plans" : "AI Scan plans"}
+            {isDating ? "App subscription plans" : "AI Scan plans"}
           </p>
           <p className="text-sm text-muted-foreground">
             {isDating
-              ? "Manage the app access tiers available to your members."
+              ? "Manage the app access subscription tiers available to your members."
               : "Manage the AI scan packages available to your members."}
           </p>
         </div>
