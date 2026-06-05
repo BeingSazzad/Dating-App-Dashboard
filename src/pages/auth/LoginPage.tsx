@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,15 +85,7 @@ export function LoginPage() {
           Sign in
         </Button>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link
-            to="/register"
-            className="font-medium text-primary hover:underline"
-          >
-            Create one
-          </Link>
-        </p>
+
 
         <p className="rounded-lg bg-muted/60 px-3 py-2 text-center text-xs text-muted-foreground">
           Demo mode — any email & password works.
