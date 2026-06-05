@@ -9,6 +9,7 @@ import { UsersPage } from "@/pages/dashboard/UsersPage";
 import { UserDetailsPage } from "@/pages/dashboard/UserDetailsPage";
 import { SubscriptionsPage } from "@/pages/dashboard/SubscriptionsPage";
 import { ReportsPage } from "@/pages/dashboard/ReportsPage";
+import { ReportDetailsPage } from "@/pages/dashboard/ReportDetailsPage";
 import { SettingsPage } from "@/pages/dashboard/SettingsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: "/users/:id", element: <UserDetailsPage /> },
           { path: "/subscriptions", element: <SubscriptionsPage /> },
           { path: "/reports", element: <ReportsPage /> },
+          { path: "/reports/:id", element: <ReportDetailsPage /> },
           { path: "/settings", element: <SettingsPage /> },
         ],
       },
