@@ -23,8 +23,8 @@ export function UserActivityInfo({ user }: { user: UserDetail }) {
       icon: Heart,
     },
     {
-      label: "Messages Sent",
-      value: formatCompact(user.stats.messagesSent),
+      label: "Total Conversations",
+      value: formatCompact(user.stats.totalConversations),
       icon: MessageSquare,
     },
     {

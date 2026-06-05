@@ -192,7 +192,7 @@ export function buildUserDetail(base: UserListItem): UserDetail {
     stats: {
       totalMatches: base.matches,
       totalLikes: base.matches * between(2, 5),
-      messagesSent: between(20, 1200),
+      totalConversations: between(5, 420),
       aiScore: base.aiScore,
       reportsReceived: reportCount,
     },

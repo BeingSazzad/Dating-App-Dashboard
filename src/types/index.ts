@@ -164,7 +164,7 @@ export interface UserDetail extends UserListItem {
   stats: {
     totalMatches: number;
     totalLikes: number;
-    messagesSent: number;
+    totalConversations: number;
     aiScore: number;
     reportsReceived: number;
   };
