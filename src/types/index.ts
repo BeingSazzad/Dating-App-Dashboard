@@ -160,6 +160,13 @@ export interface UserDetail extends UserListItem {
   lookingFor: LookingFor;
   education: string;
   profession: string;
+  height: number;                       // cm
+  netWorth: string;                     // e.g. "$20k – $100k"
+  smoking: "never" | "socially" | "regularly";
+  drinking: "never" | "socially" | "regularly";
+  workout: "never" | "sometimes" | "often" | "daily";
+  starSign: string;
+  languages: string[];
   photos: string[];
   stats: {
     totalMatches: number;

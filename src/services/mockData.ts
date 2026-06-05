@@ -188,6 +188,13 @@ export function buildUserDetail(base: UserListItem): UserDetail {
     lookingFor: pick(["relationship", "casual", "friends", "marriage"] as const),
     education: pick(["BSc Design", "MBA", "BA Literature", "PhD Physics", "Self-taught"]),
     profession: pick(["Product Designer", "Founder", "Doctor", "Engineer", "Photographer", "Teacher"]),
+    height: between(155, 195),
+    netWorth: pick(["<$10k", "$10k – $50k", "$50k – $100k", "$100k – $500k", "$500k+"]),
+    smoking: pick(["never", "socially", "regularly"] as const),
+    drinking: pick(["never", "socially", "regularly"] as const),
+    workout: pick(["never", "sometimes", "often", "daily"] as const),
+    starSign: pick(["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]),
+    languages: Array.from(new Set(Array.from({ length: between(1, 3) }, () => pick(["English", "Arabic", "French", "Spanish", "Hindi", "Urdu", "Mandarin", "Bengali"])))),
     photos: Array.from({ length: 4 }, (_, i) => photoFor(`${base.id}-p${i}`)),
     stats: {
       totalMatches: base.matches,
