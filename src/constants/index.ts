@@ -31,7 +31,7 @@ export const LOOKING_FOR_LABELS: Record<LookingFor, string> = {
 
 export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
   subscription: "Complete Access",
-  ai_score: "Scan Only",
+  ai_score: "AI Scan (1-Time)",
 };
 
 export const CURRENCY_OPTIONS = [

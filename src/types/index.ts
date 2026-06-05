@@ -79,6 +79,8 @@ export interface SubscriptionPlan {
   features: string[];
   limits: string;
   isActive: boolean;
+  type: "dating" | "ai";
+  freeScans: number;
 }
 
 export interface UserReport {

@@ -420,6 +420,8 @@ export let PLANS: SubscriptionPlan[] = [
     ],
     limits: "One-time payment",
     isActive: true,
+    type: "dating",
+    freeScans: 0,
   },
   {
     id: "plan_scan",
@@ -432,6 +434,8 @@ export let PLANS: SubscriptionPlan[] = [
     ],
     limits: "Per scan",
     isActive: true,
+    type: "ai",
+    freeScans: 0,
   },
 ];
 

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { PageHeader } from "@/components/shared";
 import {
-  AiScoringTab,
   PlansTab,
   SubscriptionOverviewCards,
   TransactionsTable,
@@ -9,8 +8,8 @@ import {
 
 const TABS = [
   { id: "ledger", label: "Ledger & Stats" },
-  { id: "plans", label: "Plan Management" },
-  { id: "ai", label: "AI Scoring" },
+  { id: "dating", label: "Dating Subscription" },
+  { id: "ai", label: "AI Subscription" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -22,7 +21,7 @@ export function SubscriptionsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Subscriptions"
-        description="Revenue overview, transaction ledger, plan management, and AI scoring pricing."
+        description="Revenue overview, transaction ledger, dating subscriptions, and AI scan pricing."
       />
 
       {/* Tab bar */}
@@ -51,15 +50,15 @@ export function SubscriptionsPage() {
         </div>
       )}
 
-      {tab === "plans" && (
+      {tab === "dating" && (
         <div className="space-y-6">
-          <PlansTab />
+          <PlansTab type="dating" />
         </div>
       )}
 
       {tab === "ai" && (
         <div className="space-y-6">
-          <AiScoringTab />
+          <PlansTab type="ai" />
         </div>
       )}
     </div>

@@ -21,6 +21,8 @@ interface PlanPayload {
   price: number;
   features: string[];
   limits: string;
+  type: "dating" | "ai";
+  freeScans: number;
 }
 
 export const subscriptionsApi = api.injectEndpoints({

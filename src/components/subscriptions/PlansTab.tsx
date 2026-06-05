@@ -31,14 +31,16 @@ interface PlanDialogProps {
   plan?: SubscriptionPlan | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  type: "dating" | "ai";
 }
 
-function PlanDialog({ plan, open, onOpenChange }: PlanDialogProps) {
+function PlanDialog({ plan, open, onOpenChange, type }: PlanDialogProps) {
   const isEdit = Boolean(plan);
   const [name, setName] = React.useState("");
   const [price, setPrice] = React.useState("");
   const [limits, setLimits] = React.useState("");
   const [featuresRaw, setFeaturesRaw] = React.useState("");
+  const [freeScans, setFreeScans] = React.useState("0");
 
   React.useEffect(() => {
     if (open) {
@@ -46,6 +48,7 @@ function PlanDialog({ plan, open, onOpenChange }: PlanDialogProps) {
       setPrice(plan?.price?.toString() ?? "");
       setLimits(plan?.limits ?? "");
       setFeaturesRaw(plan?.features?.join("\n") ?? "");
+      setFreeScans(plan?.freeScans?.toString() ?? "0");
     }
   }, [open, plan]);
 
@@ -62,6 +65,8 @@ function PlanDialog({ plan, open, onOpenChange }: PlanDialogProps) {
         .split("\n")
         .map((f) => f.trim())
         .filter(Boolean),
+      type: plan?.type ?? type,
+      freeScans: parseInt(freeScans, 10) || 0,
     };
     if (isEdit && plan) {
       await updatePlan({ id: plan.id, ...payload }).unwrap().catch(() => undefined);
@@ -121,6 +126,18 @@ function PlanDialog({ plan, open, onOpenChange }: PlanDialogProps) {
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="plan-free-scans">Free scans per month</Label>
+            <Input
+              id="plan-free-scans"
+              type="number"
+              min="0"
+              value={freeScans}
+              onChange={(e) => setFreeScans(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="plan-features">
               Features{" "}
               <span className="text-xs text-muted-foreground">(one per line)</span>
@@ -152,14 +169,20 @@ function PlanDialog({ plan, open, onOpenChange }: PlanDialogProps) {
 /* ------------------------------------------------------------------ */
 /* Plans tab                                                            */
 /* ------------------------------------------------------------------ */
-export function PlansTab() {
-  const { data: plans, isLoading } = useGetPlansQuery();
+interface PlansTabProps {
+  type: "dating" | "ai";
+}
+
+export function PlansTab({ type }: PlansTabProps) {
+  const { data: allPlans, isLoading } = useGetPlansQuery();
   const [updatePlan] = useUpdatePlanMutation();
   const [deletePlan] = useDeletePlanMutation();
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<SubscriptionPlan | null>(null);
   const [deleteTarget, setDeleteTarget] = React.useState<SubscriptionPlan | null>(null);
+
+  const plans = allPlans?.filter((p) => p.type === type);
 
   const openCreate = () => {
     setEditing(null);
@@ -181,13 +204,19 @@ export function PlansTab() {
     setDeleteTarget(null);
   };
 
+  const isDating = type === "dating";
+
   return (
     <>
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-medium">Subscription plans</p>
+          <p className="font-medium">
+            {isDating ? "Dating subscription plans" : "AI Scan plans"}
+          </p>
           <p className="text-sm text-muted-foreground">
-            Manage the tiers available to your members.
+            {isDating
+              ? "Manage the app access tiers available to your members."
+              : "Manage the AI scan packages available to your members."}
           </p>
         </div>
         <Button onClick={openCreate} size="sm" className="gap-2">
@@ -225,6 +254,14 @@ export function PlansTab() {
 
                 {/* Features */}
                 <ul className="flex-1 space-y-1.5">
+                  <li className="flex items-center gap-2 text-sm font-semibold text-foreground/80 border-b border-border/40 pb-1.5 mb-1.5">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>
+                      {plan.freeScans > 0 
+                        ? `${plan.freeScans} free scan${plan.freeScans > 1 ? "s" : ""}/mo` 
+                        : "Paid scans only"}
+                    </span>
+                  </li>
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm">
                       <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
@@ -273,6 +310,7 @@ export function PlansTab() {
         plan={editing}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        type={type}
       />
 
       <ConfirmDialog

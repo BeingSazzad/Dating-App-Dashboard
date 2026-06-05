@@ -40,7 +40,7 @@ export function RevenueOverviewCard() {
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
         <div>
           <CardTitle>Revenue Overview</CardTitle>
-          <CardDescription>Complete Access vs Scan Only purchases</CardDescription>
+          <CardDescription>Complete Access vs AI Scan (1-Time) purchases</CardDescription>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {/* Year Selector */}
@@ -109,14 +109,14 @@ export function RevenueOverviewCard() {
                     }}
                     formatter={(value: number, name) => [
                       formatCurrency(value),
-                      name === "subscription" ? "Complete Access" : "Scan Only",
+                      name === "subscription" ? "Complete Access" : "AI Scan (1-Time)",
                     ]}
                   />
                   <Legend
                     iconType="circle"
                     formatter={(v) => (
                       <span className="text-foreground font-semibold ml-1">
-                        {v === "subscription" ? "Complete Access" : "Scan Only"}
+                        {v === "subscription" ? "Complete Access" : "AI Scan (1-Time)"}
                       </span>
                     )}
                     wrapperStyle={{ fontSize: 12 }}
