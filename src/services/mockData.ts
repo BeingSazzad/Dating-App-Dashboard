@@ -70,7 +70,7 @@ const isoDaysAgo = (days: number) =>
   new Date(Date.now() - days * 86_400_000).toISOString();
 
 function tierPrice(tier: SubscriptionTier): number {
-  return { free: 0, subscriber: 19.99 }[tier];
+  return { free: 0, subscriber: 15.00 }[tier];
 }
 
 /* --- the canonical user list --------------------------------------- */
@@ -117,7 +117,7 @@ export function buildUserDetail(base: UserListItem): UserDetail {
       id: `scan_${base.id}_${i}`,
       scannedAt: isoDaysAgo(between(1, 300)),
       score: Math.round((between(40, 99) / 10) * 10) / 10,
-      amount: 4.99,
+      amount: 20.00,
     }),
   );
 
@@ -400,7 +400,7 @@ export const TRANSACTIONS: Transaction[] = Array.from({ length: 60 }, (_, i) => 
     userName: u.name,
     userAvatar: u.avatar,
     type,
-    amount: type === "subscription" ? 19.99 : 4.99,
+    amount: type === "subscription" ? 15.00 : 20.00,
     date: isoDaysAgo(between(0, 90)),
   };
 }).sort((a, b) => +new Date(b.date) - +new Date(a.date));
@@ -408,27 +408,29 @@ export const TRANSACTIONS: Transaction[] = Array.from({ length: 60 }, (_, i) => 
 /* --- subscription plans list database ----------------------------- */
 export let PLANS: SubscriptionPlan[] = [
   {
-    id: "plan_plus",
-    name: "Plus",
-    price: 9.99,
-    features: ["Unlimited Likes", "5 AI Scans/mo", "Basic Filters"],
-    limits: "5 scans/mo",
+    id: "plan_complete",
+    name: "Complete Access",
+    price: 15.00,
+    features: [
+      "Premium AI face scan",
+      "Personalized rating",
+      "Full dating experience",
+      "Match with your level",
+      "Shareable rating card"
+    ],
+    limits: "One-time payment",
     isActive: true,
   },
   {
-    id: "plan_premium",
-    name: "Premium",
-    price: 19.99,
-    features: ["Unlimited Likes", "15 AI Scans/mo", "Direct Messaging", "Advanced Filters"],
-    limits: "15 scans/mo",
-    isActive: true,
-  },
-  {
-    id: "plan_elite",
-    name: "Elite",
-    price: 39.99,
-    features: ["Unlimited Likes", "Unlimited AI Scans", "Profile Boost", "Priority Support"],
-    limits: "Unlimited scans",
+    id: "plan_scan",
+    name: "Scan Only",
+    price: 20.00,
+    features: [
+      "Premium AI face scan",
+      "Personalized rating",
+      "No dating access"
+    ],
+    limits: "Per scan",
     isActive: true,
   },
 ];

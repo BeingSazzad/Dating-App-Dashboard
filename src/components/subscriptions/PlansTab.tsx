@@ -97,7 +97,7 @@ function PlanDialog({ plan, open, onOpenChange }: PlanDialogProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="plan-price">Price / month ($)</Label>
+              <Label htmlFor="plan-price">Price ($)</Label>
               <Input
                 id="plan-price"
                 type="number"
@@ -105,7 +105,7 @@ function PlanDialog({ plan, open, onOpenChange }: PlanDialogProps) {
                 step="0.01"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="19.99"
+                placeholder="15.00"
               />
             </div>
           </div>
@@ -211,10 +211,10 @@ export function PlansTab() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-semibold">{plan.name}</p>
-                    <p className="text-2xl font-bold tabular-nums">
+                    <p className="text-2xl font-bold tabular-nums flex items-baseline gap-1.5">
                       {formatCurrency(plan.price)}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        /mo
+                      <span className="text-xs font-normal text-muted-foreground font-sans">
+                        ({plan.limits})
                       </span>
                     </p>
                   </div>
@@ -232,8 +232,6 @@ export function PlansTab() {
                     </li>
                   ))}
                 </ul>
-
-                <p className="text-xs text-muted-foreground">{plan.limits}</p>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 border-t border-border pt-3">

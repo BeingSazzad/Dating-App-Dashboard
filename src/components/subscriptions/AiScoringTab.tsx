@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 /* Simple local-state form (can be wired to a real settings endpoint)  */
 /* ------------------------------------------------------------------ */
 export function AiScoringTab() {
-  const [pricePerScan, setPricePerScan] = React.useState("4.99");
+  const [pricePerScan, setPricePerScan] = React.useState("20.00");
   const [freeScansPerMonth, setFreeScansPerMonth] = React.useState("0");
   const [saved, setSaved] = React.useState(false);
 

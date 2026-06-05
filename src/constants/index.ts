@@ -19,7 +19,7 @@ export const GENDER_LABELS: Record<Gender, string> = {
 
 export const TIER_LABELS: Record<SubscriptionTier, string> = {
   free: "Free",
-  subscriber: "Subscriber",
+  subscriber: "Complete Access",
 };
 
 export const LOOKING_FOR_LABELS: Record<LookingFor, string> = {
@@ -30,8 +30,8 @@ export const LOOKING_FOR_LABELS: Record<LookingFor, string> = {
 };
 
 export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
-  subscription: "Subscription",
-  ai_score: "AI Score",
+  subscription: "Complete Access",
+  ai_score: "Scan Only",
 };
 
 export const CURRENCY_OPTIONS = [
