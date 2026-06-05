@@ -98,6 +98,7 @@ export function UserGrowthChart() {
                   axisLine={false}
                   fontSize={12}
                   stroke="hsl(var(--muted-foreground))"
+                  interval={0}
                 />
                 <YAxis
                   tickLine={false}

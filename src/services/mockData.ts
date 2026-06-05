@@ -367,43 +367,107 @@ export function buildRevenueOverview(timeRange: string = "Monthly", year?: numbe
 /* --- user growth points ------------------------------------------- */
 export function buildUserGrowth(year?: number): UserGrowthPoint[] {
   const selectedYear = year || 2026;
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+
+  // Base count: users who joined before the selected year
+  const baseUsers = USERS.filter(u => new Date(u.joinedAt).getFullYear() < selectedYear);
+  const baseTotal = baseUsers.length;
+  const basePremium = baseUsers.filter(u => u.subscription !== "free").length;
+
+  // Monthly growth seeds for consistent visuals
+  const monthlyNewUsers = [18, 22, 28, 35, 42, 38, 45, 52, 48, 55, 50, 44];
+  const monthlyNewPremium = [5, 7, 9, 11, 14, 12, 15, 17, 16, 18, 17, 14];
+
   return MONTHS.map((m, idx) => {
-    const totalCount = USERS.filter(u => {
+    // For the current year, future months project forward; past months use real + seed data
+    const isFuture = selectedYear === currentYear && idx > currentMonth;
+
+    if (isFuture) {
+      // Project forward with slight growth for future months
+      const growthFactor = 1 + (idx - currentMonth) * 0.03;
+      const lastRealMonth = currentMonth;
+      const cumulativeSeed = monthlyNewUsers.slice(0, lastRealMonth + 1).reduce((a, b) => a + b, 0);
+      const projectedTotal = Math.round((baseTotal + cumulativeSeed) * growthFactor);
+      const cumulativePremiumSeed = monthlyNewPremium.slice(0, lastRealMonth + 1).reduce((a, b) => a + b, 0);
+      const projectedPremium = Math.round((basePremium + cumulativePremiumSeed) * growthFactor);
+      return { month: m, users: projectedTotal, premium: projectedPremium };
+    }
+
+    // Real/seeded cumulative count for past months
+    const realJoined = USERS.filter(u => {
       const d = new Date(u.joinedAt);
       if (d.getFullYear() < selectedYear) return true;
       if (d.getFullYear() === selectedYear && d.getMonth() <= idx) return true;
       return false;
     }).length;
 
-    const premiumCount = USERS.filter(u => {
+    const seedBoost = monthlyNewUsers.slice(0, idx + 1).reduce((a, b) => a + b, 0);
+    const totalCount = Math.max(realJoined, baseTotal + seedBoost);
+
+    const realPremium = USERS.filter(u => {
       const d = new Date(u.joinedAt);
       if (d.getFullYear() < selectedYear) return u.subscription !== "free";
       if (d.getFullYear() === selectedYear && d.getMonth() <= idx) return u.subscription !== "free";
       return false;
     }).length;
 
-    return {
-      month: m,
-      users: totalCount,
-      premium: premiumCount
-    };
+    const premiumSeedBoost = monthlyNewPremium.slice(0, idx + 1).reduce((a, b) => a + b, 0);
+    const premiumCount = Math.max(realPremium, basePremium + premiumSeedBoost);
+
+    return { month: m, users: totalCount, premium: premiumCount };
   });
 }
 
 /* --- transactions -------------------------------------------------- */
-export const TRANSACTIONS: Transaction[] = Array.from({ length: 60 }, (_, i) => {
-  const u = USERS[between(0, USERS.length - 1)];
-  const type: TransactionType = rand() > 0.5 ? "subscription" : "ai_score";
-  return {
-    id: `txn_${5000 + i}`,
-    userId: u.id,
-    userName: u.name,
-    userAvatar: u.avatar,
-    type,
-    amount: type === "subscription" ? 15.00 : 20.00,
-    date: isoDaysAgo(between(0, 90)),
-  };
-}).sort((a, b) => +new Date(b.date) - +new Date(a.date));
+// Generate rich transaction history spanning 2025 and 2026 (all months)
+function makeTransactions(): Transaction[] {
+  const txns: Transaction[] = [];
+  let id = 5000;
+
+  // 2025 — all 12 months, 8-18 txns per month
+  for (let month = 0; month < 12; month++) {
+    const count = between(8, 18);
+    for (let j = 0; j < count; j++) {
+      const u = USERS[between(0, USERS.length - 1)];
+      const type: TransactionType = rand() > 0.45 ? "subscription" : "ai_score";
+      const day = between(1, 28);
+      txns.push({
+        id: `txn_${id++}`,
+        userId: u.id,
+        userName: u.name,
+        userAvatar: u.avatar,
+        type,
+        amount: type === "subscription" ? 15.00 : 20.00,
+        date: new Date(2025, month, day).toISOString(),
+      });
+    }
+  }
+
+  // 2026 — months Jan through current month, 10-20 txns per month
+  const currentMonth = new Date().getMonth();
+  for (let month = 0; month <= currentMonth; month++) {
+    const count = between(10, 20);
+    for (let j = 0; j < count; j++) {
+      const u = USERS[between(0, USERS.length - 1)];
+      const type: TransactionType = rand() > 0.45 ? "subscription" : "ai_score";
+      const maxDay = month === currentMonth ? new Date().getDate() : 28;
+      const day = between(1, maxDay);
+      txns.push({
+        id: `txn_${id++}`,
+        userId: u.id,
+        userName: u.name,
+        userAvatar: u.avatar,
+        type,
+        amount: type === "subscription" ? 15.00 : 20.00,
+        date: new Date(2026, month, day).toISOString(),
+      });
+    }
+  }
+
+  return txns.sort((a, b) => +new Date(b.date) - +new Date(a.date));
+}
+export const TRANSACTIONS: Transaction[] = makeTransactions();
 
 /* --- subscription plans list database ----------------------------- */
 export let PLANS: SubscriptionPlan[] = [
