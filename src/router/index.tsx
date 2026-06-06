@@ -9,6 +9,7 @@ import { UserDetailsPage } from "@/pages/dashboard/UserDetailsPage";
 import { SubscriptionsPage } from "@/pages/dashboard/SubscriptionsPage";
 import { ReportsPage } from "@/pages/dashboard/ReportsPage";
 import { ReportDetailsPage } from "@/pages/dashboard/ReportDetailsPage";
+import { CmsPage } from "@/pages/dashboard/CmsPage";
 import { SettingsPage } from "@/pages/dashboard/SettingsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: "/subscriptions", element: <SubscriptionsPage /> },
           { path: "/reports", element: <ReportsPage /> },
           { path: "/reports/:id", element: <ReportDetailsPage /> },
+          { path: "/cms", element: <CmsPage /> },
           { path: "/settings", element: <SettingsPage /> },
         ],
       },

@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   Users,
   CreditCard,
+  FileText,
   ShieldAlert,
   Settings,
   type LucideIcon,
@@ -18,5 +19,6 @@ export const navItems: NavItem[] = [
   { label: "Users", to: "/users", icon: Users },
   { label: "Reports", to: "/reports", icon: ShieldAlert },
   { label: "Subscriptions", to: "/subscriptions", icon: CreditCard },
+  { label: "CMS", to: "/cms", icon: FileText },
   { label: "Settings", to: "/settings", icon: Settings },
 ];
