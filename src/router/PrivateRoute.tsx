@@ -5,7 +5,9 @@ import { toast } from "sonner";
 
 export function PrivateRoute() {
   const location = useLocation();
-  const { data: profile, isLoading, isFetching, isError } = useGetProfileQuery(null);
+  const { data: profile, isLoading, isFetching, isError } = useGetProfileQuery(null, {
+    skip: !localStorage.getItem("token"),
+  });
   // console.log(profile)
   if (isLoading || isFetching) {
     return <Spinner />;
