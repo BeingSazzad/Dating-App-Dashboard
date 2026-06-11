@@ -1,88 +1,123 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DataTable, SearchInput, type Column } from "@/components/shared";
-import { PAYMENT_TYPE_LABELS } from "@/constants";
-import { useGetTransactionsQuery } from "@/services";
 import { useDebounce } from "@/hooks";
 import { appConfig } from "@/config";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
-import type { Transaction, TransactionType } from "@/types";
+import { useGetAllSubscribersQuery } from "@/redux/apiSlices/admin/subscriptionApi";
+
+type SubscriberUser = {
+  _id?: string | null;
+  image?: string | null;
+  contact?: string | null;
+  name?: string | null;
+  address?: string | null;
+};
+
+type SubscriberTransaction = {
+  _id?: string | null;
+  name?: string | null;
+  price?: number | null;
+  user?: SubscriberUser | null;
+  createdAt?: string | null;
+};
+
+type SubscribersResponse = {
+  success?: boolean;
+  message?: string;
+  pagination?: {
+    total?: number | null;
+    limit?: number | null;
+    page?: number | null;
+    totalPage?: number | null;
+  };
+  data?: SubscriberTransaction[] | null;
+};
 
 export function TransactionsTable() {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
-  const [type, setType] = React.useState<TransactionType | "all">("all");
   const [search, setSearch] = React.useState("");
   const debouncedSearch = useDebounce(search, 300);
 
   React.useEffect(() => {
     setPage(1);
-  }, [type, debouncedSearch]);
+  }, [debouncedSearch]);
 
-  const { data, isFetching } = useGetTransactionsQuery({
+  const { data, isFetching } = useGetAllSubscribersQuery({
     page,
-    pageSize: appConfig.defaultPageSize,
-    type,
-    search: debouncedSearch,
-  });
+    limit: 10,
+    searchTerms: debouncedSearch,
+  }) as { data?: SubscribersResponse; isFetching: boolean };
 
-  const columns: Column<Transaction>[] = [
+  const rows = data?.data ?? [];
+
+  const columns: Column<SubscriberTransaction>[] = [
     {
-      key: "userName",
+      key: "user",
       header: "User",
-      cell: (t) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={t.userAvatar} alt={t.userName} />
-            <AvatarFallback>{initials(t.userName)}</AvatarFallback>
-          </Avatar>
-          <span className="font-medium">{t.userName}</span>
-        </div>
-      ),
+      cell: (t) => {
+        const userName = t.user?.name ?? "N/A";
+        const userImage = t.user?.image ?? undefined;
+
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={userImage} alt={userName} />
+              <AvatarFallback>{userName === "N/A" ? "N/A" : initials(userName)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <span className="block truncate font-medium">{userName}</span>
+              <span className="block truncate text-xs text-muted-foreground">
+                {t.user?.contact ?? "N/A"}
+              </span>
+            </div>
+          </div>
+        );
+      },
     },
     {
-      key: "type",
-      header: "Type",
-      cell: (t) => (
-        <Badge variant={t.type === "subscription" ? "default" : "secondary"}>
-          {PAYMENT_TYPE_LABELS[t.type]}
-        </Badge>
-      ),
+      key: "name",
+      header: "Subscription",
+      cell: (t) => t.name ?? "N/A",
     },
     {
-      key: "amount",
-      header: "Amount",
+      key: "price",
+      header: "Price",
       align: "right",
       cell: (t) => (
-        <span className="font-medium">{formatCurrency(t.amount)}</span>
+        <span className="font-medium">
+          {typeof t.price === "number" ? formatCurrency(t.price) : "N/A"}
+        </span>
       ),
     },
     {
-      key: "date",
+      key: "createdAt",
       header: "Date",
       align: "right",
       cell: (t) => (
-        <span className="text-muted-foreground">{formatDate(t.date)}</span>
+        <span className="text-muted-foreground">
+          {t.createdAt ? formatDate(t.createdAt) : "N/A"}
+        </span>
       ),
+    },
+    {
+      key: "user",
+      header: "Address",
+      cell: (t) => t.user?.address ?? "N/A",
     },
   ];
 
   return (
     <Card className="space-y-4 p-4 sm:p-5">
       <div>
-        <h3 className="font-display text-lg font-semibold tracking-tight">Transaction History</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <h3 className="font-display text-lg font-semibold tracking-tight">
+          Transaction History
+        </h3>
+        <p className="mt-0.5 text-xs text-muted-foreground">
           View and trace all user payments and subscription purchases.
         </p>
       </div>
@@ -91,36 +126,28 @@ export function TransactionsTable() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search by user…"
+          placeholder="Search by user..."
         />
-        <Select
-          value={type}
-          onValueChange={(v) => setType(v as TransactionType | "all")}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            <SelectItem value="subscription">Subscription</SelectItem>
-            <SelectItem value="ai_score">AI Score</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <DataTable
         columns={columns}
-        data={data?.data ?? []}
-        rowKey={(t) => t.id}
+        data={rows}
+        rowKey={(t) => t._id ?? `${t.name ?? "subscription"}-${t.createdAt ?? "unknown"}`}
         isLoading={isFetching}
-        onRowClick={(t) => navigate(`/users/${t.userId}`)}
+        onRowClick={(t) => {
+          const userId = t.user?._id;
+          if (userId) {
+            navigate(`/users/${userId}`);
+          }
+        }}
         emptyTitle="No transactions found"
       />
 
       <Pagination
         page={page}
         pageSize={appConfig.defaultPageSize}
-        total={data?.total ?? 0}
+        total={data?.pagination?.total ?? 0}
         onPageChange={setPage}
       />
     </Card>
