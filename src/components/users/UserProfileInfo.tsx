@@ -18,12 +18,14 @@ import { InfoField, SectionCard } from "@/components/users/SectionCard";
 import { LOOKING_FOR_LABELS } from "@/constants";
 import type { UserDetail } from "@/types";
 
+import { getImageUrl } from "@/utils/getImageUrl";
+
 /* ── small label → icon map for lifestyle items ─────────────────────── */
 const LIFESTYLE_ITEMS = (user: UserDetail) => [
-  { label: "Smoking",  value: user.smoking,  icon: Cigarette },
-  { label: "Drinking", value: user.drinking, icon: Beer },
-  { label: "Workout",  value: user.workout,  icon: Dumbbell },
-  { label: "Star Sign",value: user.starSign, icon: Star },
+  { label: "Smoking",  value: user.smoking ?? "N/A",  icon: Cigarette },
+  { label: "Drinking", value: user.drinking ?? "N/A", icon: Beer },
+  { label: "Workout",  value: user.workout ?? "N/A",  icon: Dumbbell },
+  { label: "Star Sign",value: user.star_sign ?? user.starSign ?? "N/A", icon: Star },
 ];
 
 export function UserProfileInfo({ user }: { user: UserDetail }) {
@@ -32,7 +34,7 @@ export function UserProfileInfo({ user }: { user: UserDetail }) {
 
       {/* ── About (bio) ─────────────────────────────────────────────── */}
       <SectionCard title="About" icon={UserCircle}>
-        <p className="text-sm leading-relaxed text-foreground/90">{user.bio}</p>
+        <p className="text-sm leading-relaxed text-foreground/90">{user.bio ?? "N/A"}</p>
       </SectionCard>
 
       {/* ── Basic Info ──────────────────────────────────────────────── */}
@@ -41,44 +43,44 @@ export function UserProfileInfo({ user }: { user: UserDetail }) {
           <InfoField
             label="Gender"
             value={
-              <span className="capitalize">{user.gender}</span>
+              <span className="capitalize">{user.gender ?? "N/A"}</span>
             }
           />
           <InfoField
             label="Height"
-            value={
+            value={user.height ? (
               <span className="flex items-center gap-1.5">
                 <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
                 {user.height} cm
               </span>
-            }
+            ) : "N/A"}
           />
           <InfoField
             label="Net Worth"
-            value={
+            value={user.net_worth || user.netWorth ? (
               <span className="flex items-center gap-1.5">
                 <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.netWorth}
+                {user.net_worth || user.netWorth}
               </span>
-            }
+            ) : "N/A"}
           />
           <InfoField
             label="Profession"
-            value={
+            value={user.job_title || user.profession ? (
               <span className="flex items-center gap-1.5">
                 <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.profession}
+                {user.job_title || user.profession}
               </span>
-            }
+            ) : "N/A"}
           />
           <InfoField
             label="Education"
-            value={
+            value={user.school || user.education ? (
               <span className="flex items-center gap-1.5">
                 <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.education}
+                {user.school || user.education}
               </span>
-            }
+            ) : "N/A"}
           />
         </dl>
       </SectionCard>
@@ -87,18 +89,22 @@ export function UserProfileInfo({ user }: { user: UserDetail }) {
       <SectionCard title="Relationship" icon={Heart}>
         <InfoField
           label="Looking For"
-          value={LOOKING_FOR_LABELS[user.lookingFor]}
+          value={user.looking_for || (user.lookingFor ? LOOKING_FOR_LABELS[user.lookingFor] : "N/A")}
         />
       </SectionCard>
 
       {/* ── Interests ───────────────────────────────────────────────── */}
       <SectionCard title="Interests" icon={Globe2}>
         <div className="flex flex-wrap gap-2">
-          {user.interests.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              {tag}
-            </Badge>
-          ))}
+          {(user.intrests || user.interests || []).length > 0 ? (
+            (user.intrests || user.interests || []).map((tag) => (
+              <Badge key={tag} variant="secondary">
+                {tag}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-sm text-muted-foreground">N/A</span>
+          )}
         </div>
       </SectionCard>
 
@@ -125,11 +131,15 @@ export function UserProfileInfo({ user }: { user: UserDetail }) {
             Languages
           </p>
           <div className="flex flex-wrap gap-2">
-            {user.languages.map((lang) => (
-              <Badge key={lang} variant="outline" className="text-xs">
-                {lang}
-              </Badge>
-            ))}
+            {(user.languages || []).length > 0 ? (
+              (user.languages || []).map((lang) => (
+                <Badge key={lang} variant="outline" className="text-xs">
+                  {lang}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground">N/A</span>
+            )}
           </div>
         </div>
       </SectionCard>
@@ -137,19 +147,25 @@ export function UserProfileInfo({ user }: { user: UserDetail }) {
       {/* ── Photos ──────────────────────────────────────────────────── */}
       <SectionCard title="Photos" icon={Globe2}>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-          {user.photos.map((src, i) => (
-            <div
-              key={i}
-              className="aspect-square overflow-hidden rounded-lg border border-border bg-muted"
-            >
-              <img
-                src={src}
-                alt={`${user.name} photo ${i + 1}`}
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
+          {(user.gallery || user.photos || []).length > 0 ? (
+            (user.gallery || user.photos || []).map((src, i) => (
+              <div
+                key={i}
+                className="aspect-square overflow-hidden rounded-lg border border-border bg-muted"
+              >
+                <img
+                  src={getImageUrl(src)}
+                  alt={`${user.name ?? "User"} photo ${i + 1}`}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ))
+          ) : (
+            <div className="col-span-full">
+              <span className="text-sm text-muted-foreground">N/A</span>
             </div>
-          ))}
+          )}
         </div>
       </SectionCard>
 

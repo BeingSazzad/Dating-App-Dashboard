@@ -14,11 +14,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useGetDashboardStatsQuery } from "@/redux/apiSlices/admin/dashboardApi";
+import Spinner from "@/components/ui/Spinner";
 
 const KPI_TIMEFRAMES = ["Today", "This Month", "This Year", "All Time"] as const;
 
 export function DashboardPage() {
   const [kpiTimeframe, setKpiTimeframe] = useState<string>("This Month");
+
+  // Single source of truth for top-level stats
+  const { data: statsRes, isLoading: statsLoading } = useGetDashboardStatsQuery();
+  const statsData = statsRes?.data;
+
+  if (statsLoading) {
+    return <Spinner />;
+  }
 
   return (
     <div className="space-y-6">
@@ -40,8 +50,8 @@ export function DashboardPage() {
           </Select>
         }
       />
-      <KpiCards timeframe={kpiTimeframe} />
-      <AdditionalStats timeframe={kpiTimeframe} />
+      <KpiCards data={statsData} isLoading={statsLoading} />
+      <AdditionalStats data={statsData} isLoading={statsLoading} />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <RevenueOverviewCard />
         <UserGrowthChart />

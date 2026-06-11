@@ -23,20 +23,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGetUserGrowthQuery } from "@/services";
+import { useGetUserGrowthDataQuery } from "@/redux/apiSlices/admin/dashboardApi";
 
 const YEARS = [2025, 2026] as const;
 
 export function UserGrowthChart() {
   const [year, setYear] = useState<number>(2026);
-  const { data, isLoading } = useGetUserGrowthQuery(year);
+  const { data: userRes, isLoading } = useGetUserGrowthDataQuery({ userGrowthYear: year });
+  const data = userRes?.data?.userGrowthArray;
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
         <div>
           <CardTitle>User Growth</CardTitle>
-          <CardDescription>Total vs premium members</CardDescription>
+          <CardDescription>New user registrations</CardDescription>
         </div>
         <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
           <SelectTrigger className="h-8 w-[80px] text-xs shrink-0">
@@ -53,7 +54,8 @@ export function UserGrowthChart() {
       </CardHeader>
       <CardContent>
         {isLoading || !data ? (
-          <Skeleton className="h-[280px] w-full" />
+          // SKELETON LOADER FOR GRAPH
+          <Skeleton className="h-[280px] w-full rounded-xl" />
         ) : (
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -71,18 +73,6 @@ export function UserGrowthChart() {
                     <stop
                       offset="100%"
                       stopColor="hsl(var(--primary))"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                  <linearGradient id="gPremium" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="0%"
-                      stopColor="hsl(var(--foreground))"
-                      stopOpacity={0.2}
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="hsl(var(--foreground))"
                       stopOpacity={0}
                     />
                   </linearGradient>
@@ -114,22 +104,15 @@ export function UserGrowthChart() {
                     color: "hsl(var(--popover-foreground))",
                     fontSize: 12,
                   }}
+                  formatter={(value: number) => [value, "New Users"]}
                 />
                 <Area
                   type="monotone"
-                  dataKey="users"
-                  name="Total"
+                  dataKey="new_users"
+                  name="New Users"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
                   fill="url(#gUsers)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="premium"
-                  name="Premium"
-                  stroke="hsl(var(--foreground))"
-                  strokeWidth={2}
-                  fill="url(#gPremium)"
                 />
               </AreaChart>
             </ResponsiveContainer>

@@ -10,7 +10,7 @@ import type { SubscriptionTier, UserStatus } from "@/types";
 
 const STATUS_VARIANT: Record<UserStatus, "success" | "destructive"> = {
   active: "success",
-  banned: "destructive",
+  delete: "destructive",
 };
 
 export function StatusBadge({ status }: { status: UserStatus }) {
@@ -20,7 +20,7 @@ export function StatusBadge({ status }: { status: UserStatus }) {
         className={cn(
           "h-1.5 w-1.5 rounded-full",
           status === "active" && "bg-success",
-          status === "banned" && "bg-destructive",
+          status === "delete" && "bg-destructive",
         )}
       />
       {USER_STATUS_LABELS[status]}
@@ -33,8 +33,6 @@ export function StatusBadge({ status }: { status: UserStatus }) {
 /* ------------------------------------------------------------------ */
 
 export function TierBadge({ tier }: { tier: SubscriptionTier }) {
-  if (tier === "free")
-    return <Badge variant="muted">{TIER_LABELS[tier]}</Badge>;
   return (
     <Badge variant="default">
       <Sparkles className="h-3 w-3" />

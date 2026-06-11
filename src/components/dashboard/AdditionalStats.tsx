@@ -1,39 +1,43 @@
 import { Activity, Gauge, ScanLine, UserPlus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGetKpisQuery } from "@/services";
 import { formatCompact } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
+interface AdditionalStatsData {
+  newUserToday: number;
+  newSubscriptionToday: number;
+  avgAiScore: number;
+  total_ai_scan: number;
+}
+
 interface MiniStat {
   label: string;
-  value: string;
+  value: string | number;
   icon: LucideIcon;
 }
 
-export function AdditionalStats({ timeframe }: { timeframe: string }) {
-  const { data, isLoading } = useGetKpisQuery(timeframe);
-
+export function AdditionalStats({ data, isLoading }: { data?: AdditionalStatsData; isLoading: boolean }) {
   const stats: MiniStat[] = [
     {
       label: "New Users Today",
-      value: data ? formatCompact(data.newUsersToday) : "—",
+      value: data ? formatCompact(data.newUserToday) : "—",
       icon: UserPlus,
     },
     {
-      label: "Active Users Today",
-      value: data ? formatCompact(data.activeUsersToday) : "—",
+      label: "New Subs Today",
+      value: data ? formatCompact(data.newSubscriptionToday) : "—",
       icon: Activity,
     },
     {
       label: "Average AI Score",
-      value: data ? data.averageAiScore.toFixed(1) : "—",
+      value: data ? data.avgAiScore.toFixed(2) : "—",
       icon: Gauge,
     },
     {
       label: "Total AI Scans",
-      value: data ? formatCompact(data.totalAiScans) : "—",
+      value: data ? formatCompact(data.total_ai_scan) : "—",
       icon: ScanLine,
     },
   ];

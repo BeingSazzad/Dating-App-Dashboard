@@ -12,13 +12,12 @@ import { DataTable, type Column } from "@/components/shared";
 import { StatusBadge, TierBadge } from "@/components/users/UserBadges";
 import { useGetRecentUsersQuery } from "@/services";
 import { initials, timeAgo } from "@/lib/utils";
-import type { UserListItem } from "@/types";
 
 export function RecentUsersTable() {
   const navigate = useNavigate();
   const { data, isLoading } = useGetRecentUsersQuery(6);
 
-  const columns: Column<UserListItem>[] = [
+  const columns: Column<any>[] = [
     {
       key: "name",
       header: "User",
@@ -74,10 +73,10 @@ export function RecentUsersTable() {
         <DataTable
           columns={columns}
           data={data ?? []}
-          rowKey={(u) => u.id}
+          rowKey={(u) => u._id}
           isLoading={isLoading}
           skeletonRows={6}
-          onRowClick={(u) => navigate(`/users/${u.id}`)}
+          onRowClick={(u) => navigate(`/users/${u._id}`)}
           emptyTitle="No recent users"
         />
       </CardContent>

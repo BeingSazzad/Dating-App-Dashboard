@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout";
-import { PrivateRoute } from "@/router/PrivateRoute";
 import { PublicRoute } from "@/router/PublicRoute";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
@@ -12,6 +11,7 @@ import { ReportDetailsPage } from "@/pages/dashboard/ReportDetailsPage";
 import { CmsPage } from "@/pages/dashboard/CmsPage";
 import { SettingsPage } from "@/pages/dashboard/SettingsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { PrivateRoute } from "./PrivateRoute";
 
 export const router = createBrowserRouter([
   {

@@ -11,20 +11,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { useAuth } from "@/hooks/useAuth";
 import { useAppDispatch } from "@/store/hooks";
 import { logout } from "@/store/slices/authSlice";
 import { initials } from "@/lib/utils";
+import { useGetProfileQuery } from "@/redux/apiSlices/authSlice";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 interface TopbarProps {
   onOpenMobileSidebar: () => void;
 }
 
 export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
-  const { user } = useAuth();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
+  const { data: profileRes } = useGetProfileQuery(undefined)
+  const user = profileRes?.data
+  // console.log(user)
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6">
       <Button
@@ -54,7 +56,7 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
           <DropdownMenuTrigger asChild>
             <button className="ml-1 flex items-center gap-2 rounded-full pl-1 pr-2 outline-none transition-colors hover:bg-accent">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} alt={user?.name} />
+                <AvatarImage src={getImageUrl(user?.image)} alt={user?.name} />
                 <AvatarFallback>{initials(user?.name ?? "RA")}</AvatarFallback>
               </Avatar>
               <span className="hidden text-left sm:block">

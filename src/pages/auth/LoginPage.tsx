@@ -1,37 +1,82 @@
 import * as React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthShell } from "@/pages/auth/AuthShell";
-import { useLoginMutation } from "@/services";
-import { useAppDispatch } from "@/store/hooks";
-import { setCredentials } from "@/store/slices/authSlice";
+import { useLoginMutation } from "@/redux/apiSlices/authSlice";
+import { toast } from "sonner";
 
-interface LocationState {
-  from?: { pathname?: string };
-}
+
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const dispatch = useAppDispatch();
+
   const [login, { isLoading }] = useLoginMutation();
 
-  const [email, setEmail] = React.useState("admin@ratedapp.io");
-  const [password, setPassword] = React.useState("demo1234");
-  const [error, setError] = React.useState<string | null>(null);
+  const [email, setEmail] = React.useState("superadmin@gmail.com");
+  const [password, setPassword] = React.useState("password@");
 
+
+  // const handleSubmit = async () => {
+  //   setError(null);
+  //   try {
+  //     const result = await login({ email, password }).unwrap();
+  //     dispatch(setCredentials(result));
+  //     const to = (location.state as LocationState)?.from?.pathname ?? "/";
+  //     navigate(to, { replace: true });
+  //   } catch {
+  //     setError("Unable to sign in. Please check your credentials.");
+  //   }
+  // };
   const handleSubmit = async () => {
-    setError(null);
     try {
-      const result = await login({ email, password }).unwrap();
-      dispatch(setCredentials(result));
-      const to = (location.state as LocationState)?.from?.pathname ?? "/";
-      navigate(to, { replace: true });
-    } catch {
-      setError("Unable to sign in. Please check your credentials.");
+      toast.promise(login({ email, password }).unwrap(), {
+        loading: 'Logging in...',
+        success: (res) => {
+          // console.log(res)
+          // if (
+          //     res?.success === false &&
+          //     res?.message === "Please verify your account, then try to login again"
+          // ) {
+          //     try {
+          //         resendOtp({ email: values.email }).unwrap();
+          //         navigate('/verify-otp');
+          //         return 'OTP sent. Please verify your account.';
+          //     } catch (otpErr) {
+          //         return 'Failed to resend OTP';
+          //     }
+          // }
+          // console.log(res);
+          localStorage.setItem('token', res?.data?.createToken);
+          navigate(`/`);
+          return res.message || 'Login successful';
+        },
+        error: async (err) => {
+          const message =
+            err?.data?.message ||
+            err?.data?.errorMessages?.[0]?.message ||
+            'Login failed';
+
+          // if (
+          //     message === "Please verify your account, then try to login again"
+          // ) {
+          //     try {
+          //         await resendOtp({ email: values.email }).unwrap();
+          //         navigate('/verify-otp');
+          //         return 'OTP sent. Please verify your account.';
+          //     } catch (otpErr) {
+          //         return 'Failed to resend OTP';
+          //     }
+          // }
+
+          return message;
+        },
+      });
+    } catch (error) {
+      const err = error as any;
+      console.log(err.data.errorMessages[0].message);
     }
   };
 
@@ -73,8 +118,6 @@ export function LoginPage() {
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
           />
         </div>
-
-        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button className="w-full" onClick={handleSubmit} disabled={isLoading}>
           {isLoading ? (

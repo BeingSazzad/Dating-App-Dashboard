@@ -14,27 +14,27 @@ export function UserActivityInfo({ user }: { user: UserDetail }) {
   const items: { label: string; value: string; icon: LucideIcon }[] = [
     {
       label: "Total Matches",
-      value: formatCompact(user.stats.totalMatches),
+      value: user.stats?.totalMatches !== undefined ? formatCompact(user.stats.totalMatches) : "N/A",
       icon: Flame,
     },
     {
       label: "Total Likes",
-      value: formatCompact(user.stats.totalLikes),
+      value: user.stats?.totalLikes !== undefined ? formatCompact(user.stats.totalLikes) : "N/A",
       icon: Heart,
     },
     {
       label: "Total Conversations",
-      value: formatCompact(user.stats.totalConversations),
+      value: user.stats?.totalConversations !== undefined ? formatCompact(user.stats.totalConversations) : "N/A",
       icon: MessageSquare,
     },
     {
       label: "Current AI Score",
-      value: user.stats.aiScore.toString(),
+      value: user.ai_score !== undefined && user.ai_score !== null ? user.ai_score.toString() : "N/A",
       icon: Gauge,
     },
     {
       label: "Reports Received",
-      value: user.stats.reportsReceived.toString(),
+      value: user.stats?.reportsReceived !== undefined ? user.stats.reportsReceived.toString() : "N/A",
       icon: ShieldAlert,
     },
   ];

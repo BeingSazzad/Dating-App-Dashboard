@@ -24,16 +24,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGetRevenueOverviewQuery } from "@/services";
 import { formatCurrency } from "@/lib/utils";
+import { useGetRevenueDataQuery } from "@/redux/apiSlices/admin/dashboardApi";
 
 const YEARS = [2025, 2026] as const;
 
 export function RevenueOverviewCard() {
   const [year, setYear] = useState<number>(2026);
-  const timeRange = "Monthly";
 
-  const { data, isLoading } = useGetRevenueOverviewQuery({ timeRange, year });
+  const { data: revRes, isLoading } = useGetRevenueDataQuery({ revenueYear: year });
+  const data = revRes?.data?.revenueArray; // Array of monthly data
+
+  // Calculate dynamic total from the provided array
+  const totalRevenue = data?.reduce((acc: number, curr: any) => acc + curr.total, 0) || 0;
 
   return (
     <Card className="lg:col-span-2">
@@ -43,7 +46,6 @@ export function RevenueOverviewCard() {
           <CardDescription>Subscription vs AI Scan revenue breakdown</CardDescription>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* Year Selector */}
           <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
             <SelectTrigger className="h-8 w-[80px] text-xs">
               <SelectValue />
@@ -60,13 +62,16 @@ export function RevenueOverviewCard() {
       </CardHeader>
       <CardContent>
         {isLoading || !data ? (
-          <Skeleton className="h-[280px] w-full" />
+          // SKELETON LOADER FOR GRAPH
+          <div className="flex flex-col space-y-4">
+            <Skeleton className="h-[32px] w-[120px]" />
+            <Skeleton className="h-[240px] w-full rounded-xl" />
+          </div>
         ) : (
           <>
-            {/* Total banner */}
             <div className="mb-4 flex items-baseline gap-2">
               <span className="font-display text-2xl font-semibold">
-                {formatCurrency(data.total)}
+                {formatCurrency(totalRevenue)}
               </span>
               <span className="text-xs text-muted-foreground">
                 total · {year}
@@ -75,7 +80,7 @@ export function RevenueOverviewCard() {
             <div className="h-[240px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={data.monthly}
+                  data={data}
                   margin={{ top: 8, right: 8, left: -8, bottom: 0 }}
                   barGap={4}
                 >
@@ -97,7 +102,7 @@ export function RevenueOverviewCard() {
                     axisLine={false}
                     fontSize={12}
                     stroke="hsl(var(--muted-foreground))"
-                    tickFormatter={(v) => `$${v / 1000}k`}
+                    tickFormatter={(v) => `$${v}`}
                   />
                   <Tooltip
                     cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
@@ -108,29 +113,29 @@ export function RevenueOverviewCard() {
                       color: "hsl(var(--popover-foreground))",
                       fontSize: 12,
                     }}
-                    formatter={(value: number, name) => [
+                    formatter={(value: number, name: string) => [
                       formatCurrency(value),
-                      name === "subscription" ? "Subscription" : "AI Scan",
+                      name === "sub_revenue" ? "Subscription" : "AI Scan",
                     ]}
                   />
                   <Legend
                     iconType="circle"
                     formatter={(v) => (
                       <span className="text-foreground font-semibold ml-1">
-                        {v === "subscription" ? "Subscription" : "AI Scan"}
+                        {v === "sub_revenue" ? "Subscription" : "AI Scan"}
                       </span>
                     )}
                     wrapperStyle={{ fontSize: 12 }}
                   />
                   <Bar
-                    dataKey="subscription"
+                    dataKey="sub_revenue"
                     stackId="rev"
                     fill="hsl(var(--primary))"
                     radius={[0, 0, 0, 0]}
                     maxBarSize={36}
                   />
                   <Bar
-                    dataKey="aiScore"
+                    dataKey="scan_revenue"
                     stackId="rev"
                     fill="hsl(38 40% 25%)"
                     radius={[6, 6, 0, 0]}

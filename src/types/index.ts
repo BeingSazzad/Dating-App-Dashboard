@@ -59,11 +59,15 @@ export interface RegisterPayload {
 /* Users (dating-app members)                                          */
 /* ------------------------------------------------------------------ */
 
-export type Gender = "male" | "female" | "non_binary";
+export type Gender = "Man" | "Women" | "Non binary";
 
-export type UserStatus = "active" | "banned";
+export type UserStatus = "active" | "delete";
 
-export type SubscriptionTier = "free" | "subscriber";
+export type SubscriptionTier =
+  | "bronze"
+  | "silver"
+  | "gold"
+  | "premium";
 
 export interface WarningRecord {
   id: string;
@@ -99,18 +103,18 @@ export interface UserReport {
 export type LookingFor = "relationship" | "casual" | "friends" | "marriage";
 
 export interface UserListItem {
-  id: ID;
-  name: string;
-  avatar: string;
-  age: number;
-  gender: Gender;
-  location: string;
-  aiScore: number;
-  matches: number;
-  subscription: SubscriptionTier;
-  status: UserStatus;
-  verified: boolean;
-  joinedAt: string;
+  _id: string;
+  image?: string;
+  status?: string;
+  createdAt?: string;
+  ai_score?: number;
+  gender?: string;
+  name?: string;
+  address?: string;
+  age?: number;          // Missing in current API response
+  matches?: number;      // Missing in current API response
+  subscription?: { name: string; [key: string]: any };
+
 }
 
 export interface MatchRecord {
@@ -154,34 +158,41 @@ export interface ReportRecord {
 }
 
 export interface UserDetail extends UserListItem {
-  email: string;
-  phone: string;
-  lastLogin: string;
-  bio: string;
-  interests: string[];
-  lookingFor: LookingFor;
-  education: string;
-  profession: string;
-  height: number;                       // cm
-  netWorth: string;                     // e.g. "$20k – $100k"
-  smoking: "never" | "socially" | "regularly";
-  drinking: "never" | "socially" | "regularly";
-  workout: "never" | "sometimes" | "often" | "daily";
-  starSign: string;
-  languages: string[];
-  photos: string[];
-  stats: {
+  email?: string;
+  phone?: string;
+  lastLogin?: string;
+  bio?: string;
+  interests?: string[];
+  intrests?: string[]; // API typo
+  lookingFor?: LookingFor;
+  looking_for?: string; // new from api
+  education?: string;
+  school?: string; // new from api
+  profession?: string;
+  job_title?: string; // new from api
+  height?: number;                       // cm
+  netWorth?: string;                     // e.g. "$20k – $100k"
+  net_worth?: string; // new from api
+  smoking?: "never" | "socially" | "regularly";
+  drinking?: string; // changed to string for new api
+  workout?: string; // changed to string for new api
+  starSign?: string;
+  star_sign?: string; // new from api
+  languages?: string[];
+  photos?: string[];
+  gallery?: string[]; // new from api
+  stats?: {
     totalMatches: number;
     totalLikes: number;
     totalConversations: number;
     aiScore: number;
     reportsReceived: number;
   };
-  matchHistory: MatchRecord[];
-  aiScanHistory: AiScanRecord[];
-  subscriptionHistory: SubscriptionRecord[];
-  paymentHistory: PaymentRecord[];
-  reports: ReportRecord[];
+  matchHistory?: MatchRecord[];
+  aiScanHistory?: AiScanRecord[];
+  subscriptionHistory?: SubscriptionRecord[];
+  paymentHistory?: PaymentRecord[];
+  reports?: ReportRecord[];
   warnings?: WarningRecord[];
 }
 

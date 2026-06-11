@@ -8,18 +8,20 @@ import type {
 
 export const USER_STATUS_LABELS: Record<UserStatus, string> = {
   active: "Active",
-  banned: "Banned",
+  delete: "Inactive",
 };
 
 export const GENDER_LABELS: Record<Gender, string> = {
-  male: "Male",
-  female: "Female",
-  non_binary: "Non-binary",
+  Man: "Man",
+  Women: "Women",
+  "Non binary": "Non binary",
 };
 
 export const TIER_LABELS: Record<SubscriptionTier, string> = {
-  free: "Free",
-  subscriber: "Premium",
+  bronze: "Bronze",
+  silver: "Silver",
+  gold: "Gold",
+  premium: "Premium",
 };
 
 export const LOOKING_FOR_LABELS: Record<LookingFor, string> = {

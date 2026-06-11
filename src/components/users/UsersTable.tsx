@@ -1,4 +1,4 @@
-import { Eye, MoreHorizontal, Pencil, ShieldBan } from "lucide-react";
+import { Eye, MoreHorizontal, Pencil, ShieldBan, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,11 +13,10 @@ import { DataTable, type Column } from "@/components/shared";
 import {
   AiScorePill,
   StatusBadge,
-  TierBadge,
 } from "@/components/users/UserBadges";
-import { GENDER_LABELS } from "@/constants";
 import { formatDate, initials } from "@/lib/utils";
-import type { SortDirection, UserListItem } from "@/types";
+import type { SortDirection, UserListItem, UserStatus } from "@/types";
+import { Badge } from "../ui/badge";
 
 interface UsersTableProps {
   data: UserListItem[];
@@ -48,10 +47,10 @@ export function UsersTable({
       cell: (u) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={u.avatar} alt={u.name} />
-            <AvatarFallback>{initials(u.name)}</AvatarFallback>
+            <AvatarImage src={u.image} alt={u.name ?? "User"} />
+            <AvatarFallback>{initials(u?.name || "N/A")}</AvatarFallback>
           </Avatar>
-          <span className="font-medium">{u.name}</span>
+          <span className="font-medium">{u.name ?? "N/A"}</span>
         </div>
       ),
     },
@@ -60,20 +59,22 @@ export function UsersTable({
       header: "Age",
       sortable: true,
       align: "center",
-      cell: (u) => u.age,
+      cell: (u) => u.age ?? "N/A",
     },
     {
       key: "gender",
       header: "Gender",
       cell: (u) => (
-        <span className="text-muted-foreground">{GENDER_LABELS[u.gender]}</span>
+        <span className="text-muted-foreground">
+          {u.gender || "N/A"}
+        </span>
       ),
     },
     {
       key: "location",
       header: "Location",
       sortable: true,
-      cell: (u) => <span className="text-muted-foreground">{u.location}</span>,
+      cell: (u) => <span className="text-muted-foreground">{u.address ?? "N/A"}</span>,
     },
     {
       key: "aiScore",
@@ -82,7 +83,11 @@ export function UsersTable({
       align: "center",
       cell: (u) => (
         <div className="flex justify-center">
-          <AiScorePill score={u.aiScore} />
+          {u.ai_score !== undefined && u.ai_score !== null ? (
+            <AiScorePill score={u.ai_score} />
+          ) : (
+            "N/A"
+          )}
         </div>
       ),
     },
@@ -91,26 +96,35 @@ export function UsersTable({
       header: "Matches",
       sortable: true,
       align: "center",
-      cell: (u) => u.matches,
+      cell: (u) => u.matches ?? "N/A",
     },
     {
       key: "subscription",
       header: "Subscription",
       sortable: true,
-      cell: (u) => <TierBadge tier={u.subscription} />,
+      cell: (u) => u?.subscription?.name ? (
+        <Badge variant={'default'} className="inline-flex items-center gap-1">
+          <Sparkles className="h-3 w-3" />
+          {u.subscription.name}
+        </Badge>
+      ) : (
+        "N/A"
+      ),
     },
     {
       key: "status",
       header: "Status",
       sortable: true,
-      cell: (u) => <StatusBadge status={u.status} />,
+      cell: (u) => u.status ? <StatusBadge status={u.status as UserStatus} /> : "N/A",
     },
     {
       key: "joinedAt",
       header: "Joined",
       sortable: true,
       cell: (u) => (
-        <span className="text-muted-foreground">{formatDate(u.joinedAt)}</span>
+        <span className="text-muted-foreground">
+          {u.createdAt ? formatDate(u.createdAt) : "N/A"}
+        </span>
       ),
     },
     {
@@ -158,7 +172,7 @@ export function UsersTable({
     <DataTable
       columns={columns}
       data={data}
-      rowKey={(u) => u.id}
+      rowKey={(u) => u._id}
       isLoading={isLoading}
       sortBy={sortBy}
       sortDir={sortDir}

@@ -6,11 +6,13 @@ import { Card } from "@/components/ui/card";
 import {
   AiScorePill,
   StatusBadge,
-  TierBadge,
 } from "@/components/users/UserBadges";
 import { GENDER_LABELS } from "@/constants";
 import { initials } from "@/lib/utils";
-import type { UserDetail } from "@/types";
+import type { UserDetail, UserStatus } from "@/types";
+import { getImageUrl } from "@/utils/getImageUrl";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles } from "lucide-react";
 
 interface UserDetailHeaderProps {
   user: UserDetail;
@@ -36,22 +38,27 @@ export function UserDetailHeader({ user, onBan, onWarn }: UserDetailHeaderProps)
         {/* Left — avatar + identity */}
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16 border border-border">
-            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarImage src={getImageUrl(user?.image || "")} alt={user.name ?? "User"} />
             <AvatarFallback className="text-lg">
-              {initials(user.name)}
+              {initials(user.name ?? "N/A")}
             </AvatarFallback>
           </Avatar>
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-display text-2xl font-semibold tracking-tight">
-                {user.name}
+                {user.name ?? "N/A"}
               </h2>
-              <StatusBadge status={user.status} />
+              {user.status && <StatusBadge status={user.status as UserStatus} />}
             </div>
             <p className="text-sm text-muted-foreground">
-              {user.age} · {GENDER_LABELS[user.gender]} · {user.location}
+              {user.age ?? "N/A"} · {user.gender ? (GENDER_LABELS[user.gender as keyof typeof GENDER_LABELS] || user.gender) : "N/A"} · {user.address ?? "N/A"}
             </p>
-            <TierBadge tier={user.subscription} />
+            {user?.subscription?.name ? (
+              <Badge variant="default" className="inline-flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                {user.subscription.name}
+              </Badge>
+            ) : null}
           </div>
         </div>
 
@@ -59,7 +66,11 @@ export function UserDetailHeader({ user, onBan, onWarn }: UserDetailHeaderProps)
         <div className="flex flex-wrap items-center gap-3">
           {/* AI Score prominent display */}
           <div className="flex flex-col items-center rounded-xl border border-border bg-muted/30 px-5 py-3 text-center">
-            <AiScorePill score={user.aiScore} />
+            {user.ai_score !== undefined && user.ai_score !== null ? (
+              <AiScorePill score={user.ai_score} />
+            ) : (
+              <span className="text-muted-foreground">N/A</span>
+            )}
             <p className="mt-1 text-xs text-muted-foreground">AI Score</p>
           </div>
 

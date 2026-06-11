@@ -15,14 +15,15 @@ import {
   UserProfileInfo,
   UserReports,
 } from "@/components/users";
-import { useGetUserQuery } from "@/services";
+import { useGetSingleUserQuery } from "@/redux/apiSlices/admin/usersApi";
 
 export function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: user, isLoading, isError } = useGetUserQuery(id ?? "", {
-    skip: !id,
+  const { data: userRes, isLoading, isError } = useGetSingleUserQuery({ id: id ?? "" }, {
+    // skip: !id,
   });
-
+  const user = userRes?.data
+  // console.log(user)
   const [banOpen, setBanOpen] = React.useState(false);
   const [warnOpen, setWarnOpen] = React.useState(false);
 
@@ -51,24 +52,24 @@ export function UserDetailsPage() {
       <UserActivityInfo user={user} />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <MatchHistory matches={user.matchHistory} />
-        <AiScanHistory scans={user.aiScanHistory} />
-        <SubscriptionHistory records={user.subscriptionHistory} />
-        <PaymentHistory payments={user.paymentHistory} />
+        <MatchHistory matches={user.matchHistory || []} />
+        <AiScanHistory scans={user.aiScanHistory || []} />
+        <SubscriptionHistory records={user.subscriptionHistory || []} />
+        <PaymentHistory payments={user.paymentHistory || []} />
       </div>
 
-      <UserReports reports={user.reports} />
+      <UserReports reports={user.reports || []} />
 
       <BanUserDialog
-        userId={user.id}
-        userName={user.name}
+        userId={user._id}
+        userName={user.name ?? "User"}
         open={banOpen}
         onOpenChange={setBanOpen}
       />
 
       <SendWarningDialog
-        userId={user.id}
-        userName={user.name}
+        userId={user._id}
+        userName={user.name ?? "User"}
         open={warnOpen}
         onOpenChange={setWarnOpen}
       />

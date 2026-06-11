@@ -4,14 +4,10 @@ import { PageHeader, SearchInput } from "@/components/shared";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { UsersFilters, UsersTable, BanUserDialog } from "@/components/users";
-import { useGetUsersQuery } from "@/services";
 import { useDebounce } from "@/hooks";
 import { appConfig } from "@/config";
-import type {
-  SortDirection,
-  UserFilters,
-  UserListItem,
-} from "@/types";
+import type { SortDirection, UserFilters, UserListItem } from "@/types";
+import { useGetAllUsersQuery } from "@/redux/apiSlices/admin/usersApi";
 
 export function UsersPage() {
   const navigate = useNavigate();
@@ -34,15 +30,13 @@ export function UsersPage() {
     setPage(1);
   }, [debouncedSearch, filters, sortBy, sortDir]);
 
-  const { data, isFetching } = useGetUsersQuery({
+  const { data, isFetching } = useGetAllUsersQuery({
     page,
-    pageSize: appConfig.defaultPageSize,
-    search: debouncedSearch,
-    status: filters.status,
-    gender: filters.gender,
-    subscription: filters.subscription,
-    sortBy: sortBy as keyof UserListItem,
-    sortDir,
+    limit: appConfig.defaultPageSize,
+    searchTerms: debouncedSearch,
+    gender: filters.gender === "all" ? undefined : filters.gender,
+    status: filters.status === "all" ? undefined : filters.status,
+    plan: filters.subscription === "all" ? undefined : filters.subscription,
   });
 
   const handleSortChange = (key: string) => {
@@ -80,22 +74,22 @@ export function UsersPage() {
           sortBy={sortBy}
           sortDir={sortDir}
           onSortChange={handleSortChange}
-          onView={(u) => navigate(`/users/${u.id}`)}
-          onEdit={(u) => navigate(`/users/${u.id}`)}
+          onView={(u) => navigate(`/users/${u._id}`)}
+          onEdit={(u) => navigate(`/users/${u._id}`)}
           onBan={(u) => setBanTarget(u)}
         />
 
         <Pagination
           page={page}
           pageSize={appConfig.defaultPageSize}
-          total={data?.total ?? 0}
+          total={data?.pagination?.total ?? 0} // Mapped to new API structure
           onPageChange={setPage}
         />
       </Card>
 
       <BanUserDialog
-        userId={banTarget?.id ?? null}
-        userName={banTarget?.name}
+        userId={banTarget?._id ?? null} // Changed to _id
+        userName={banTarget?.name ?? "N/A"}
         open={Boolean(banTarget)}
         onOpenChange={(o) => !o && setBanTarget(null)}
       />

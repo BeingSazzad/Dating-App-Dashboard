@@ -7,11 +7,13 @@ import { store } from "@/store";
 import "@/services";
 import App from "@/App";
 import "@/styles/globals.css";
+import { Toaster } from "sonner";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={store}>
       <App />
+      <Toaster closeButton position="top-right" />
     </Provider>
   </React.StrictMode>,
 );
