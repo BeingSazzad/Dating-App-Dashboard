@@ -28,7 +28,16 @@ const usersApi = api.injectEndpoints({
                 }
             }
         }),
+        banUser: builder.mutation({
+            query: ({ id }) => {
+                console.log(id)
+                return {
+                    url: `/user/ban-unban/${id}`,
+                    method: 'PATCH',
+                }
+            }
+        }),
     }),
 });
 
-export const { useGetAllUsersQuery, useGetSingleUserQuery } = usersApi;
+export const { useGetAllUsersQuery, useGetSingleUserQuery, useBanUserMutation } = usersApi;

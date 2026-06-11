@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -22,27 +22,25 @@ import {
   ModalTitle as DialogTitle,
   ModalFooter as DialogFooter,
 } from "@/components/ui/modal";
-import { AiScorePill, StatusBadge, TierBadge } from "@/components/users";
-import { ConfirmDialog, EmptyState, PageHeader } from "@/components/shared";
-import { SendWarningDialog } from "@/components/users";
-import {
-  useGetReportsQuery,
-  useUpdateReportMutation,
-  useBanUserFromReportMutation,
-} from "@/services";
-import { useGetUserQuery } from "@/services";
+import { EmptyState, PageHeader } from "@/components/shared";
+import { SendWarningDialog, BanUserDialog } from "@/components/users";
+import { useUpdateReportMutation } from "@/services";
 import { formatDate, initials } from "@/lib/utils";
+import { useGetSingleReportQuery } from "@/redux/apiSlices/admin/reportsApi";
+import type { UserReport } from "@/types";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 const STATUS_STYLE: Record<string, string> = {
-  pending:  "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  active: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  pending: "bg-amber-500/10 text-amber-600 border-amber-500/30",
   resolved: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
-  ignored:  "bg-muted text-muted-foreground border-border",
+  ignored: "bg-muted text-muted-foreground border-border",
 };
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-0.5">
+      <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
       <div className="text-sm text-foreground">{value}</div>
@@ -54,26 +52,47 @@ export function ReportDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: reports = [], isLoading } = useGetReportsQuery();
-  const [updateReport] = useUpdateReportMutation();
-  const [banUser, { isLoading: isBanning }] = useBanUserFromReportMutation();
+  const { data: reportRes, isLoading, refetch } = useGetSingleReportQuery(
+    { id: id ?? "" },
+    { skip: !id }
+  );
+  const report: UserReport | null = reportRes?.data ?? null;
 
-  const report = reports.find((r) => r.id === id);
+  const [updateReport] = useUpdateReportMutation();
 
   const [warnOpen, setWarnOpen] = React.useState(false);
   const [banOpen, setBanOpen] = React.useState(false);
   const [imageOpen, setImageOpen] = React.useState(false);
 
-  const { data: reportedUser, isLoading: isLoadingUser } = useGetUserQuery(
-    report?.reportedUserId ?? "",
-    { skip: !report }
-  );
+  const reportId = report?._id ?? report?.id ?? "N/A";
+  const reporter = report?.user ?? null;
+  const reportedUser = report?.reportedUser ?? null;
+  const reporterName = reporter?.name ?? "N/A";
+  const reportedUserName = reportedUser?.name ?? "N/A";
+  const reportedUserId = reportedUser?._id ?? "";
+  const images = report?.images ?? [];
+  const createdAt = report?.createdAt ?? report?.reportedAt ?? null;
+  const status = report?.status ?? "N/A";
+
+  const handleResolve = async () => {
+    if (!report?._id) return;
+    await updateReport({ id: report._id, status: "resolved" });
+    navigate("/reports");
+  };
+
+  const handleIgnore = async () => {
+    if (!report?._id) return;
+    await updateReport({ id: report._id, status: "ignored" });
+    navigate("/reports");
+  };
+
+  // Ban is handled by BanUserDialog
 
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-        Loading report…
+        Loading report...
       </div>
     );
   }
@@ -88,25 +107,8 @@ export function ReportDetailsPage() {
     );
   }
 
-  const handleResolve = async () => {
-    await updateReport({ id: report.id, status: "resolved" });
-    navigate("/reports");
-  };
-
-  const handleIgnore = async () => {
-    await updateReport({ id: report.id, status: "ignored" });
-    navigate("/reports");
-  };
-
-  const handleBan = async () => {
-    await banUser(report.reportedUserId).unwrap().catch(() => undefined);
-    setBanOpen(false);
-    navigate("/reports");
-  };
-
   return (
     <div className="space-y-6">
-      {/* Back + Header */}
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"
@@ -118,162 +120,174 @@ export function ReportDetailsPage() {
         </Button>
         <PageHeader
           title="Report Details"
-          description={`Reviewing report ${report.id}`}
+          description={`Reviewing report ${reportId}`}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-
-        {/* ── Left: Report info + Proof ──────────────────────────── */}
         <div className="space-y-5 lg:col-span-3">
-
-          {/* Report Card */}
-          <Card className="p-5 space-y-4">
+          <Card className="space-y-4 p-5">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-muted-foreground">{report.id}</span>
+              <span className="font-mono text-xs text-muted-foreground">{reportId}</span>
               <span
-                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_STYLE[report.status] ?? ""}`}
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_STYLE[status] ?? ""}`}
               >
-                {report.status}
+                {status}
               </span>
             </div>
 
-            <InfoRow label="Reason" value={<span className="font-semibold">{report.reason}</span>} />
             <InfoRow
-              label="Details"
+              label="Type"
+              value={<span className="font-semibold">{report.type ?? "N/A"}</span>}
+            />
+            <InfoRow
+              label="Message"
               value={
-                <p className="italic text-foreground/80 leading-relaxed">
-                  "{report.details || "No comments provided by reporter."}"
+                <p className="leading-relaxed italic text-foreground/80">
+                  "{report.message ?? "N/A"}"
                 </p>
+              }
+            />
+            <InfoRow
+              label="Reporter"
+              value={
+                <span>
+                  {reporterName}
+                  {reporter?.email ? ` · ${reporter.email}` : ""}
+                </span>
+              }
+            />
+            <InfoRow
+              label="Reported User"
+              value={
+                <span>
+                  {reportedUserName}
+                  {reportedUser?.email ? ` · ${reportedUser.email}` : ""}
+                </span>
               }
             />
 
             <div className="flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground">
-              <span>
-                Reporter:{" "}
-                <strong className="text-foreground">{report.reporterName}</strong>
-              </span>
-              <span>{formatDate(report.reportedAt)}</span>
+              <span>Created: {createdAt ? formatDate(createdAt) : "N/A"}</span>
+              <span>Updated: {report.updatedAt ? formatDate(report.updatedAt) : "N/A"}</span>
             </div>
           </Card>
 
-          {/* Proof Image */}
-          {report.imageUrl && (
-            <Card className="p-5 space-y-3">
-              <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                <ImageIcon className="h-3.5 w-3.5" />
-                Proof Image
-              </p>
-              <button
-                type="button"
-                onClick={() => setImageOpen(true)}
-                className="group relative block w-full overflow-hidden rounded-lg border border-border focus:outline-none"
-              >
-                <img
-                  src={report.imageUrl}
-                  alt="Proof"
-                  className="h-56 w-full object-cover transition-opacity group-hover:opacity-80"
-                />
-                <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="rounded-full bg-black/60 px-3 py-1.5 text-sm text-white flex items-center gap-1.5">
-                    <ExternalLink className="h-4 w-4" />
-                    View full size
-                  </span>
-                </span>
-              </button>
-            </Card>
-          )}
-        </div>
-
-        {/* ── Right: Reported user + Actions ────────────────────── */}
-        <div className="space-y-5 lg:col-span-2">
-
-          {/* Reported User */}
-          <Card className="p-5 space-y-4">
+          <Card className="space-y-3 p-5">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <User className="h-3.5 w-3.5" />
-              Reported User
+              <ImageIcon className="h-3.5 w-3.5" />
+              Images
             </p>
 
-            {isLoadingUser ? (
-              <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                Loading profile…
-              </div>
-            ) : reportedUser ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12 border border-border">
-                    <AvatarImage src={reportedUser.avatar} alt={reportedUser.name} />
-                    <AvatarFallback>{initials(reportedUser.name)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-bold text-sm">{reportedUser.name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {reportedUser.age} yrs · {reportedUser.gender.replace("_", " ")} · {reportedUser.location}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <StatusBadge status={reportedUser.status} />
-                  <TierBadge tier={reportedUser.subscription} />
-                  <AiScorePill score={reportedUser.aiScore} />
-                </div>
-
-                {reportedUser.bio && (
-                  <p className="border-t border-border/60 pt-3 text-xs text-muted-foreground italic leading-relaxed">
-                    "{reportedUser.bio}"
-                  </p>
-                )}
-
-                <Link
-                  to={`/users/${reportedUser.id}`}
-                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  View full profile
-                </Link>
+            {images.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {images.map((src, index) => (
+                  <button
+                    key={`${src}-${index}`}
+                    type="button"
+                    onClick={() => setImageOpen(true)}
+                    className="group relative overflow-hidden rounded-lg border border-border focus:outline-none"
+                  >
+                    <img
+                      src={getImageUrl(src)}
+                      alt={`Report image ${index + 1}`}
+                      className="h-48 w-full object-cover transition-opacity group-hover:opacity-80"
+                    />
+                    <span className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-sm text-white">
+                        <ExternalLink className="h-4 w-4" />
+                        View full size
+                      </span>
+                    </span>
+                  </button>
+                ))}
               </div>
             ) : (
-              <p className="text-sm text-destructive">Could not load profile.</p>
+              <p className="text-sm text-muted-foreground">N/A</p>
             )}
           </Card>
+        </div>
 
-          {/* Actions */}
-          {report.status === "pending" && (
-            <Card className="p-5 space-y-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                Actions
-              </p>
-              <div className="grid grid-cols-1 gap-2">
+        <div className="space-y-5 lg:col-span-2">
+          <Card className="space-y-4 p-5">
+            <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <User className="h-3.5 w-3.5" />
+              Users
+            </p>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12 border border-border">
+                  <AvatarImage src={reporter?.image ?? ""} alt={reporterName} />
+                  <AvatarFallback>{initials(reporterName)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold text-sm">Reporter</p>
+                  <p className="text-xs text-muted-foreground">
+                    {reporterName}
+                    {reporter?.status ? ` · ${reporter.status}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12 border border-border">
+                  <AvatarImage src={reportedUser?.image ?? ""} alt={reportedUserName} />
+                  <AvatarFallback>{initials(reportedUserName)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold text-sm">Reported User</p>
+                  <p className="text-xs text-muted-foreground">
+                    {reportedUserName}
+                    {reportedUser?.status ? ` · ${reportedUser.status}` : ""}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="space-y-3 p-5">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Actions
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="justify-start text-muted-foreground"
+                onClick={handleIgnore}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Ignore Report
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="justify-start border-emerald-500/40 text-emerald-600 hover:bg-emerald-50"
+                onClick={handleResolve}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Mark as Resolved
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="justify-start border-amber-500/40 text-amber-600 hover:bg-amber-50"
+                onClick={() => setWarnOpen(true)}
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Send Warning
+              </Button>
+              {reportedUser?.status === "delete" ? (
                 <Button
-                  variant="outline"
+                  className="justify-start bg-green-500 text-white hover:bg-green-600"
                   size="sm"
-                  className="justify-start text-muted-foreground"
-                  onClick={handleIgnore}
+                  onClick={() => setBanOpen(true)}
                 >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Ignore Report
+                  <Ban className="mr-2 h-4 w-4" />
+                  Unban User
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="justify-start text-emerald-600 border-emerald-500/40 hover:bg-emerald-50"
-                  onClick={handleResolve}
-                >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Mark as Resolved
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="justify-start text-amber-600 border-amber-500/40 hover:bg-amber-50"
-                  onClick={() => setWarnOpen(true)}
-                >
-                  <AlertTriangle className="mr-2 h-4 w-4" />
-                  Send Warning
-                </Button>
+              ) : (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -283,47 +297,53 @@ export function ReportDetailsPage() {
                   <Ban className="mr-2 h-4 w-4" />
                   Ban User
                 </Button>
-              </div>
-            </Card>
-          )}
+              )}
+            </div>
+          </Card>
         </div>
       </div>
 
-      {/* ── Dialogs ─────────────────────────────────────────────── */}
-
-      {/* Full image */}
       <Dialog open={imageOpen} onOpenChange={setImageOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Proof Image</DialogTitle>
+            <DialogTitle>Report Images</DialogTitle>
           </DialogHeader>
-          {report.imageUrl && (
-            <img src={report.imageUrl} alt="Proof" className="w-full h-auto rounded-lg" />
+          {images.length > 0 ? (
+            <div className="grid gap-3">
+              {images.map((src, index) => (
+                <img
+                  key={`${src}-modal-${index}`}
+                  src={src}
+                  alt={`Report image ${index + 1}`}
+                  className="h-auto w-full rounded-lg"
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">N/A</p>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setImageOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setImageOpen(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Warn */}
       <SendWarningDialog
-        userId={report.reportedUserId}
-        userName={report.reportedUserName}
+        userId={reportedUserId || null}
+        userName={reportedUserName}
         open={warnOpen}
         onOpenChange={setWarnOpen}
       />
 
-      {/* Ban confirm */}
-      <ConfirmDialog
+      <BanUserDialog
+        userId={reportedUserId || null}
+        userName={reportedUserName}
+        isBanned={reportedUser?.status === "delete"}
         open={banOpen}
         onOpenChange={setBanOpen}
-        title="Ban User"
-        description={`Permanently ban ${report.reportedUserName}? This will restrict their access and resolve this report.`}
-        confirmLabel="Ban User"
-        destructive
-        loading={isBanning}
-        onConfirm={handleBan}
+        refetch={refetch}
       />
     </div>
   );

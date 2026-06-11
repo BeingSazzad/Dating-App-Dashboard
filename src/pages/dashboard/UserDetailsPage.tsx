@@ -5,11 +5,7 @@ import { EmptyState, LoadingState } from "@/components/shared";
 import {
   AiScanHistory,
   BanUserDialog,
-  MatchHistory,
-  PaymentHistory,
   SendWarningDialog,
-  SubscriptionHistory,
-  UserActivityInfo,
   UserBasicInfo,
   UserDetailHeader,
   UserProfileInfo,
@@ -19,7 +15,7 @@ import { useGetSingleUserQuery } from "@/redux/apiSlices/admin/usersApi";
 
 export function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: userRes, isLoading, isError } = useGetSingleUserQuery({ id: id ?? "" }, {
+  const { data: userRes, isLoading, isError, refetch } = useGetSingleUserQuery({ id: id ?? "" }, {
     // skip: !id,
   });
   const user = userRes?.data
@@ -49,22 +45,23 @@ export function UserDetailsPage() {
 
       <UserBasicInfo user={user} />
       <UserProfileInfo user={user} />
-      <UserActivityInfo user={user} />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <MatchHistory matches={user.matchHistory || []} />
+        {/* <MatchHistory matches={user.matchHistory || []} /> */}
         <AiScanHistory scans={user.aiScanHistory || []} />
-        <SubscriptionHistory records={user.subscriptionHistory || []} />
-        <PaymentHistory payments={user.paymentHistory || []} />
+        {/* <SubscriptionHistory records={user.subscriptionHistory || []} /> */}
+        {/* <PaymentHistory payments={user.paymentHistory || []} /> */}
+        <UserReports reports={user.reports || []} />
       </div>
 
-      <UserReports reports={user.reports || []} />
 
       <BanUserDialog
         userId={user._id}
         userName={user.name ?? "User"}
+        isBanned={user.status === "delete"}
         open={banOpen}
         onOpenChange={setBanOpen}
+        refetch={refetch}
       />
 
       <SendWarningDialog

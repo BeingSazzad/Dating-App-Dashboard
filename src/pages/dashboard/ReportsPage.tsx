@@ -1,37 +1,41 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { Clock, CheckCircle2, XCircle, ShieldAlert } from "lucide-react";
-import { PageHeader, StatCard, ConfirmDialog } from "@/components/shared";
+import { PageHeader, StatCard, } from "@/components/shared";
 import { Card } from "@/components/ui/card";
-import { SendWarningDialog } from "@/components/users";
+import { SendWarningDialog, BanUserDialog } from "@/components/users";
 import { ReportsTable } from "@/components/reports";
 import {
-  useGetReportsQuery,
   useUpdateReportMutation,
-  useBanUserFromReportMutation,
 } from "@/services";
 import type { UserReport } from "@/types";
+import { useGetAllReportsQuery, useReportsStatisticsQuery } from "@/redux/apiSlices/admin/reportsApi";
+import Spinner from "@/components/ui/Spinner";
 
 export function ReportsPage() {
   const navigate = useNavigate();
-  const { data: reports = [], isLoading, isFetching } = useGetReportsQuery();
+  const { data: reportsStatsRes, isLoading: isStatsLoading } = useReportsStatisticsQuery()
+  const { data: reportsData, isLoading: isReportsLoading, refetch } = useGetAllReportsQuery();
+  const reports = reportsData?.data ?? [];
   const [updateReport] = useUpdateReportMutation();
-  const [banUser, { isLoading: isBanning }] = useBanUserFromReportMutation();
 
   const [warnTarget, setWarnTarget] = React.useState<UserReport | null>(null);
   const [banTarget, setBanTarget] = React.useState<UserReport | null>(null);
 
-  const totalReports    = reports.length;
-  const pendingReports  = reports.filter((r) => r.status === "pending").length;
-  const resolvedReports = reports.filter((r) => r.status === "resolved").length;
-  const ignoredReports  = reports.filter((r) => r.status === "ignored").length;
+  const totalReports = reportsStatsRes?.data?.totalReports;
+  const pendingReports = reportsStatsRes?.data?.pendingReports;
+  const resolvedReports = reportsStatsRes?.data?.resolvedReports;
+  const ignoredReports = reportsStatsRes?.data?.ignoreReports;
 
-  const handleConfirmBan = async () => {
-    if (!banTarget) return;
-    await banUser(banTarget.reportedUserId).unwrap().catch(() => undefined);
-    setBanTarget(null);
-  };
+  const getReportId = (report: UserReport) => report._id ?? report.id ?? "";
+  const getReportedUserId = (report?: UserReport | null) =>
+    report?.reportedUser?._id ?? report?.reportedUserId ?? "";
+  const getReportedUserName = (report?: UserReport | null) =>
+    report?.reportedUser?.name ?? report?.reportedUserName ?? "N/A";
 
+  // The ban mutation is now handled inside BanUserDialog
+
+  if (isReportsLoading || isStatsLoading) return <Spinner />
   return (
     <div className="space-y-6">
       <PageHeader
@@ -41,43 +45,41 @@ export function ReportsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Reports"      value={totalReports}    icon={ShieldAlert}   isLoading={isLoading} accent />
-        <StatCard label="Pending Moderation" value={pendingReports}  icon={Clock}         isLoading={isLoading} />
-        <StatCard label="Resolved Reports"   value={resolvedReports} icon={CheckCircle2}  isLoading={isLoading} />
-        <StatCard label="Ignored Reports"    value={ignoredReports}  icon={XCircle}       isLoading={isLoading} />
+        <StatCard label="Total Reports" value={totalReports} icon={ShieldAlert} isLoading={isStatsLoading} accent />
+        <StatCard label="Pending Moderation" value={pendingReports} icon={Clock} isLoading={isStatsLoading} />
+        <StatCard label="Resolved Reports" value={resolvedReports} icon={CheckCircle2} isLoading={isStatsLoading} />
+        <StatCard label="Ignored Reports" value={ignoredReports} icon={XCircle} isLoading={isStatsLoading} />
       </div>
 
       {/* Reports Table */}
       <Card className="p-4 sm:p-5">
         <ReportsTable
           data={reports}
-          isLoading={isLoading || isFetching}
-          onRowClick={(r) => navigate(`/reports/${r.id}`)}
+          isLoading={isReportsLoading}
+          onRowClick={(r) => navigate(`/reports/${getReportId(r)}`)}
           onWarnClick={(r) => setWarnTarget(r)}
           onBanClick={(r) => setBanTarget(r)}
-          onResolveClick={(r) => updateReport({ id: r.id, status: "resolved" })}
-          onIgnoreClick={(r) => updateReport({ id: r.id, status: "ignored" })}
+          onResolveClick={(r) => updateReport({ id: getReportId(r), status: "resolved" })}
+          onIgnoreClick={(r) => updateReport({ id: getReportId(r), status: "ignored" })}
         />
       </Card>
 
       {/* Send Warning */}
       <SendWarningDialog
-        userId={warnTarget?.reportedUserId ?? null}
-        userName={warnTarget?.reportedUserName}
+        userId={getReportedUserId(warnTarget) || null}
+        userName={getReportedUserName(warnTarget)}
         open={Boolean(warnTarget)}
         onOpenChange={(o) => !o && setWarnTarget(null)}
       />
 
       {/* Ban Confirm */}
-      <ConfirmDialog
+      <BanUserDialog
+        userId={getReportedUserId(banTarget) || null}
+        userName={getReportedUserName(banTarget)}
+        isBanned={banTarget?.reportedUser?.status === "delete"}
         open={Boolean(banTarget)}
         onOpenChange={(o) => !o && setBanTarget(null)}
-        title="Ban User & Resolve Reports"
-        description={`Are you sure you want to permanently ban ${banTarget?.reportedUserName}? This will restrict their account access.`}
-        confirmLabel="Ban User"
-        destructive
-        loading={isBanning}
-        onConfirm={handleConfirmBan}
+        refetch={refetch}
       />
     </div>
   );

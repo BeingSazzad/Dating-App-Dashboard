@@ -1,4 +1,4 @@
-import { ArrowLeft, ShieldBan, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ShieldBan, } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -75,24 +75,33 @@ export function UserDetailHeader({ user, onBan, onWarn }: UserDetailHeaderProps)
           </div>
 
           {/* Warning button */}
-          <Button
+          {/* <Button
             variant="outline"
             onClick={onWarn}
             className="gap-2 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
           >
             <AlertTriangle className="h-4 w-4" />
             Warn user
-          </Button>
+          </Button> */}
 
           {/* Ban button */}
-          <Button
-            variant="destructive"
-            onClick={onBan}
-            disabled={user.status === "banned"}
-          >
-            <ShieldBan className="h-4 w-4" />
-            {user.status === "banned" ? "Banned" : "Ban user"}
-          </Button>
+          {user.status === "delete" ? (
+            <Button
+              className="bg-green-500 hover:bg-green-600 text-white"
+              onClick={onBan}
+            >
+              <ShieldBan className="h-4 w-4" />
+              Unban this user
+            </Button>
+          ) : (
+            <Button
+              variant="destructive"
+              onClick={onBan}
+            >
+              <ShieldBan className="h-4 w-4" />
+              Ban user
+            </Button>
+          )}
         </div>
       </Card>
     </div>

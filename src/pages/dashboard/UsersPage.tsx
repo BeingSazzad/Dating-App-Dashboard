@@ -30,7 +30,7 @@ export function UsersPage() {
     setPage(1);
   }, [debouncedSearch, filters, sortBy, sortDir]);
 
-  const { data, isFetching } = useGetAllUsersQuery({
+  const { data, isFetching, refetch } = useGetAllUsersQuery({
     page,
     limit: appConfig.defaultPageSize,
     searchTerms: debouncedSearch,
@@ -82,7 +82,7 @@ export function UsersPage() {
         <Pagination
           page={page}
           pageSize={appConfig.defaultPageSize}
-          total={data?.pagination?.total ?? 0} // Mapped to new API structure
+          total={data?.pagination?.total ?? 0}
           onPageChange={setPage}
         />
       </Card>
@@ -90,8 +90,10 @@ export function UsersPage() {
       <BanUserDialog
         userId={banTarget?._id ?? null} // Changed to _id
         userName={banTarget?.name ?? "N/A"}
+        isBanned={banTarget?.status === "delete"}
         open={Boolean(banTarget)}
         onOpenChange={(o) => !o && setBanTarget(null)}
+        refetch={refetch}
       />
     </div>
   );

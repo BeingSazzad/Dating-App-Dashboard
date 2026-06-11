@@ -96,7 +96,7 @@ export function AiScorePill({ score }: { score: number }) {
             textTone,
           )}
         >
-          {score.toFixed(1)}
+          {score?.toFixed(1)}
         </span>
       </span>
       {/* large readable score label */}

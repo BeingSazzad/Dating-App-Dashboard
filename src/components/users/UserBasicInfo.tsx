@@ -1,4 +1,4 @@
-import { AlertTriangle, CalendarDays, Clock, IdCard, Mail, MapPin, Phone } from "lucide-react";
+import { AlertTriangle, BookOpen, Briefcase, CalendarDays, Clock, IdCard, MapPin, Phone, Wallet } from "lucide-react";
 import { InfoField, SectionCard } from "@/components/users/SectionCard";
 import { GENDER_LABELS } from "@/constants";
 import { formatDate, timeAgo } from "@/lib/utils";
@@ -16,20 +16,11 @@ export function UserBasicInfo({ user }: { user: UserDetail }) {
           <InfoField label="Age" value={user.age ?? "N/A"} />
           <InfoField label="Gender" value={user.gender ? (GENDER_LABELS[user.gender as keyof typeof GENDER_LABELS] || user.gender) : "N/A"} />
           <InfoField
-            label="Email"
-            value={user.email ? (
-              <span className="flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.email}
-              </span>
-            ) : "N/A"}
-          />
-          <InfoField
             label="Phone"
-            value={user.phone ? (
+            value={user?.contact ? (
               <span className="flex items-center gap-1.5">
                 <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.phone}
+                {user?.contact}
               </span>
             ) : "N/A"}
           />
@@ -57,6 +48,33 @@ export function UserBasicInfo({ user }: { user: UserDetail }) {
               <span className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                 {timeAgo(user.lastLogin)}
+              </span>
+            ) : "N/A"}
+          />
+          <InfoField
+            label="Net Worth"
+            value={user.net_worth || user.netWorth ? (
+              <span className="flex items-center gap-1.5">
+                <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                {user.net_worth || user.netWorth}
+              </span>
+            ) : "N/A"}
+          />
+          <InfoField
+            label="Profession"
+            value={user.job_title || user.profession ? (
+              <span className="flex items-center gap-1.5">
+                <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
+                {user.job_title || user.profession}
+              </span>
+            ) : "N/A"}
+          />
+          <InfoField
+            label="Education"
+            value={user.school || user.education ? (
+              <span className="flex items-center gap-1.5">
+                <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                {user.school || user.education}
               </span>
             ) : "N/A"}
           />

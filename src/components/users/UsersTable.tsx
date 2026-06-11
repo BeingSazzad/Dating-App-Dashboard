@@ -1,4 +1,4 @@
-import { Eye, MoreHorizontal, Pencil, ShieldBan, Sparkles } from "lucide-react";
+import { Eye, MoreHorizontal, ShieldBan, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,6 @@ export function UsersTable({
   sortDir,
   onSortChange,
   onView,
-  onEdit,
   onBan,
 }: UsersTableProps) {
   const columns: Column<UserListItem>[] = [
@@ -151,17 +150,22 @@ export function UsersTable({
             <DropdownMenuItem onClick={() => onView(u)}>
               <Eye className="h-4 w-4" /> View profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(u)}>
-              <Pencil className="h-4 w-4" /> Edit user
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => onBan(u)}
-              disabled={u.status === "banned"}
-            >
-              <ShieldBan className="h-4 w-4" /> Ban user
-            </DropdownMenuItem>
+            {u.status === "delete" ? (
+              <DropdownMenuItem
+                className="text-green-600 focus:bg-green-50 focus:text-green-600"
+                onClick={() => onBan(u)}
+              >
+                <ShieldBan className="h-4 w-4" /> Unban user
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => onBan(u)}
+              >
+                <ShieldBan className="h-4 w-4" /> Ban user
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

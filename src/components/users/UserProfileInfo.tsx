@@ -1,7 +1,6 @@
 import {
   Beer,
-  BookOpen,
-  Briefcase,
+
   Cigarette,
   Dumbbell,
   Globe2,
@@ -11,7 +10,6 @@ import {
   Sparkles,
   Star,
   UserCircle,
-  Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { InfoField, SectionCard } from "@/components/users/SectionCard";
@@ -22,10 +20,10 @@ import { getImageUrl } from "@/utils/getImageUrl";
 
 /* ── small label → icon map for lifestyle items ─────────────────────── */
 const LIFESTYLE_ITEMS = (user: UserDetail) => [
-  { label: "Smoking",  value: user.smoking ?? "N/A",  icon: Cigarette },
+  { label: "Smoking", value: user.smoking ?? "N/A", icon: Cigarette },
   { label: "Drinking", value: user.drinking ?? "N/A", icon: Beer },
-  { label: "Workout",  value: user.workout ?? "N/A",  icon: Dumbbell },
-  { label: "Star Sign",value: user.star_sign ?? user.starSign ?? "N/A", icon: Star },
+  { label: "Workout", value: user.workout ?? "N/A", icon: Dumbbell },
+  { label: "Star Sign", value: user.star_sign ?? user.starSign ?? "N/A", icon: Star },
 ];
 
 export function UserProfileInfo({ user }: { user: UserDetail }) {
@@ -35,54 +33,6 @@ export function UserProfileInfo({ user }: { user: UserDetail }) {
       {/* ── About (bio) ─────────────────────────────────────────────── */}
       <SectionCard title="About" icon={UserCircle}>
         <p className="text-sm leading-relaxed text-foreground/90">{user.bio ?? "N/A"}</p>
-      </SectionCard>
-
-      {/* ── Basic Info ──────────────────────────────────────────────── */}
-      <SectionCard title="Basic Info" icon={Sparkles}>
-        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <InfoField
-            label="Gender"
-            value={
-              <span className="capitalize">{user.gender ?? "N/A"}</span>
-            }
-          />
-          <InfoField
-            label="Height"
-            value={user.height ? (
-              <span className="flex items-center gap-1.5">
-                <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.height} cm
-              </span>
-            ) : "N/A"}
-          />
-          <InfoField
-            label="Net Worth"
-            value={user.net_worth || user.netWorth ? (
-              <span className="flex items-center gap-1.5">
-                <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.net_worth || user.netWorth}
-              </span>
-            ) : "N/A"}
-          />
-          <InfoField
-            label="Profession"
-            value={user.job_title || user.profession ? (
-              <span className="flex items-center gap-1.5">
-                <Briefcase className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.job_title || user.profession}
-              </span>
-            ) : "N/A"}
-          />
-          <InfoField
-            label="Education"
-            value={user.school || user.education ? (
-              <span className="flex items-center gap-1.5">
-                <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                {user.school || user.education}
-              </span>
-            ) : "N/A"}
-          />
-        </dl>
       </SectionCard>
 
       {/* ── Relationship ────────────────────────────────────────────── */}

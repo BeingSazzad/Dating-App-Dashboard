@@ -87,17 +87,33 @@ export interface SubscriptionPlan {
   freeScans: number;
 }
 
+export interface ReportUserRef {
+  _id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  status?: string
+}
+
 export interface UserReport {
-  id: string;
-  reporterName: string;
-  reporterId: string;
-  reportedUserName: string;
-  reportedUserId: string;
-  reason: "Fake profile" | "Harassment" | "Spam" | "Inappropriate content";
-  details?: string;
-  reportedAt: string;
-  status: "pending" | "resolved" | "ignored";
+  _id: string;
+  id?: string;
+  user?: ReportUserRef | null;
+  reporterName?: string | null;
+  reporterId?: string | null;
+  reportedUser?: ReportUserRef | null;
+  reportedUserName?: string | null;
+  reportedUserId?: string | null;
+  message?: string | null;
+  reason?: string | null;
+  details?: string | null;
+  images?: string[] | null;
   imageUrl?: string | null;
+  type?: string | null;
+  status?: "active" | "pending" | "resolved" | "ignored" | string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  reportedAt?: string | null;
 }
 
 export type LookingFor = "relationship" | "casual" | "friends" | "marriage";
@@ -113,7 +129,7 @@ export interface UserListItem {
   address?: string;
   age?: number;          // Missing in current API response
   matches?: number;      // Missing in current API response
-  subscription?: { name: string; [key: string]: any };
+  subscription?: { name: string;[key: string]: any };
 
 }
 
@@ -159,7 +175,7 @@ export interface ReportRecord {
 
 export interface UserDetail extends UserListItem {
   email?: string;
-  phone?: string;
+  contact?: string;
   lastLogin?: string;
   bio?: string;
   interests?: string[];
