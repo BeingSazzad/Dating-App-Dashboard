@@ -6,7 +6,6 @@ import {
   Globe2,
   Heart,
   Languages,
-  Ruler,
   Sparkles,
   Star,
   UserCircle,

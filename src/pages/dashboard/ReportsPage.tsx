@@ -5,9 +5,7 @@ import { PageHeader, StatCard, } from "@/components/shared";
 import { Card } from "@/components/ui/card";
 import { SendWarningDialog, BanUserDialog } from "@/components/users";
 import { ReportsTable } from "@/components/reports";
-import {
-  useUpdateReportMutation,
-} from "@/services";
+
 import type { UserReport } from "@/types";
 import { useGetAllReportsQuery, useReportsStatisticsQuery } from "@/redux/apiSlices/admin/reportsApi";
 import Spinner from "@/components/ui/Spinner";
@@ -17,7 +15,10 @@ export function ReportsPage() {
   const { data: reportsStatsRes, isLoading: isStatsLoading } = useReportsStatisticsQuery()
   const { data: reportsData, isLoading: isReportsLoading, refetch } = useGetAllReportsQuery();
   const reports = reportsData?.data ?? [];
-  const [updateReport] = useUpdateReportMutation();
+  // const [updateReport] = useUpdateReportMutation();
+  const updateReport = ({ id, status }: { id: string; status: string }) => {
+    console.log("id", id, "status", status)
+  }
 
   const [warnTarget, setWarnTarget] = React.useState<UserReport | null>(null);
   const [banTarget, setBanTarget] = React.useState<UserReport | null>(null);

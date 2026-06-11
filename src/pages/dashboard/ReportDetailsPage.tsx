@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/modal";
 import { EmptyState, PageHeader } from "@/components/shared";
 import { SendWarningDialog, BanUserDialog } from "@/components/users";
-import { useUpdateReportMutation } from "@/services";
 import { formatDate, initials } from "@/lib/utils";
 import { useGetSingleReportQuery } from "@/redux/apiSlices/admin/reportsApi";
 import type { UserReport } from "@/types";
@@ -58,7 +57,10 @@ export function ReportDetailsPage() {
   );
   const report: UserReport | null = reportRes?.data ?? null;
 
-  const [updateReport] = useUpdateReportMutation();
+  // const [updateReport] = useUpdateReportMutation();
+  const updateReport = ({ id, status }: { id: string, status: string }) => {
+    console.log("id", id, "status", status)
+  }
 
   const [warnOpen, setWarnOpen] = React.useState(false);
   const [banOpen, setBanOpen] = React.useState(false);

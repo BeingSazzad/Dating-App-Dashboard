@@ -10,12 +10,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { DataTable, type Column } from "@/components/shared";
 import { StatusBadge, TierBadge } from "@/components/users/UserBadges";
-import { useGetRecentUsersQuery } from "@/services";
 import { initials, timeAgo } from "@/lib/utils";
 
 export function RecentUsersTable() {
   const navigate = useNavigate();
-  const { data, isLoading } = useGetRecentUsersQuery(6);
+
 
   const columns: Column<any>[] = [
     {
@@ -72,9 +71,9 @@ export function RecentUsersTable() {
       <CardContent>
         <DataTable
           columns={columns}
-          data={data ?? []}
+          data={[]}
           rowKey={(u) => u._id}
-          isLoading={isLoading}
+          isLoading={false}
           skeletonRows={6}
           onRowClick={(u) => navigate(`/users/${u._id}`)}
           emptyTitle="No recent users"

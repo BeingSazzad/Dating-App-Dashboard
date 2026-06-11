@@ -20,7 +20,7 @@ interface UserDetailHeaderProps {
   onWarn: () => void;
 }
 
-export function UserDetailHeader({ user, onBan, onWarn }: UserDetailHeaderProps) {
+export function UserDetailHeader({ user, onBan, }: UserDetailHeaderProps) {
   const navigate = useNavigate();
 
   return (

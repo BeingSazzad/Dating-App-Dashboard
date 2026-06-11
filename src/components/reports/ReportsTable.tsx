@@ -39,7 +39,7 @@ export function ReportsTable({
   onWarnClick,
   onBanClick,
   onResolveClick,
-  onIgnoreClick,
+  // onIgnoreClick,
 }: ReportsTableProps) {
   const navigate = useNavigate();
   const getReportId = (r: UserReport) => r._id ?? r.id ?? "N/A";

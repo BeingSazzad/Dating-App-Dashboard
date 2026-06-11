@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/modal";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useSendWarningMutation } from "@/services";
 
 /* ------------------------------------------------------------------ */
 /* Warning templates                                                    */
@@ -72,8 +71,7 @@ export function SendWarningDialog({
   const [selectedTemplate, setSelectedTemplate] =
     React.useState<TemplateId>("harassment");
   const [customMessage, setCustomMessage] = React.useState("");
-
-  const [sendWarning, { isLoading }] = useSendWarningMutation();
+  const isLoading = false
 
   const activeTemplate = WARNING_TEMPLATES.find(
     (t) => t.id === selectedTemplate,
@@ -91,13 +89,13 @@ export function SendWarningDialog({
 
   const handleSend = async () => {
     if (!userId || !finalMessage.trim()) return;
-    await sendWarning({
-      userId,
-      message: finalMessage.trim(),
-      template: selectedTemplate === "custom" ? undefined : activeTemplate.label,
-    })
-      .unwrap()
-      .catch(() => undefined);
+    // await sendWarning({
+    //   userId,
+    //   message: finalMessage.trim(),
+    //   template: selectedTemplate === "custom" ? undefined : activeTemplate.label,
+    // })
+    //   .unwrap()
+    //   .catch(() => undefined);
     handleClose(false);
   };
 
@@ -129,11 +127,10 @@ export function SendWarningDialog({
                 key={t.id}
                 type="button"
                 onClick={() => setSelectedTemplate(t.id)}
-                className={`rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors ${
-                  selectedTemplate === t.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-muted/40 text-foreground hover:bg-muted"
-                }`}
+                className={`rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors ${selectedTemplate === t.id
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-muted/40 text-foreground hover:bg-muted"
+                  }`}
               >
                 {t.label}
               </button>
