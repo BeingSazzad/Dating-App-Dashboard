@@ -1,9 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Spinner from "@/components/ui/Spinner";
 import { useGetProfileQuery } from "@/redux/apiSlices/authSlice";
-import { toast } from "sonner";
-import { useEffect } from "react";
-
 export function PrivateRoute() {
   const location = useLocation();
   const token = localStorage.getItem("token");
@@ -14,14 +11,14 @@ export function PrivateRoute() {
     isFetching,
     isError,
   } = useGetProfileQuery(null, {
-    skip: !token,
+    // skip: !token,
   });
 
-  useEffect(() => {
-    if (isError) {
-      toast.error("Please login again");
-    }
-  }, [isError]);
+  // useEffect(() => {
+  //   if (isError) {
+  //     toast.error("Please login again");
+  //   }
+  // }, [isError]);
 
   if (!token) {
     return <Navigate to="/login" replace state={{ from: location }} />;
