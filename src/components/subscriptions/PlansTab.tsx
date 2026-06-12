@@ -118,7 +118,10 @@ function PlanDialog({ plan, open, onOpenChange, type }: PlanDialogProps) {
             onOpenChange(false);
             return "Plan created successfully"
           },
-          error: "Failed to create plan"
+          error: (err) => {
+            if (err.data.message) return err.data.message
+            else return "Failed to create plan"
+          }
         })
       }
     }
@@ -200,22 +203,30 @@ function PlanDialog({ plan, open, onOpenChange, type }: PlanDialogProps) {
 
           <div className="space-y-1.5">
             <Label htmlFor="plan-badge">Badge</Label>
-            <Input
+            <select
               id="plan-badge"
+              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={badge}
               onChange={(e) => setBadge(e.target.value)}
-              placeholder="Most Popular"
-            />
+            >
+              <option value="">No badge</option>
+              <option value="Basic">Basic</option>
+              <option value="Best Value">Best Value</option>
+              <option value="Most Popular">Most Popular</option>
+            </select>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="plan-recurring">Recurring</Label>
-            <Input
+            <select
               id="plan-recurring"
+              className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={recurring}
               onChange={(e) => setRecurring(e.target.value)}
-              placeholder="month"
-            />
+            >
+              <option value="month">Month</option>
+              <option value="year">Year</option>
+            </select>
           </div>
 
           <div className="space-y-1.5">
