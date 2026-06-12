@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import Spinner from "@/components/ui/Spinner";
 import { useGetProfileQuery } from "@/redux/apiSlices/authSlice";
+
 export function PrivateRoute() {
   const location = useLocation();
 
@@ -8,9 +9,10 @@ export function PrivateRoute() {
     data: profile,
     isLoading,
     isFetching,
-  } = useGetProfileQuery(null, {
-    // skip: !token,
-  });
+  } = useGetProfileQuery(undefined);
+
+
+
 
 
   if (isLoading || isFetching) {

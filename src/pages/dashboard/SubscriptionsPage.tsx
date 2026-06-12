@@ -31,11 +31,10 @@ export function SubscriptionsPage() {
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              tab === t.id
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === t.id
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {t.label}
           </button>
@@ -52,13 +51,13 @@ export function SubscriptionsPage() {
 
       {tab === "app_sub" && (
         <div className="space-y-6">
-          <PlansTab type="dating" />
+          <PlansTab type="app" />
         </div>
       )}
 
       {tab === "ai_scan" && (
         <div className="space-y-6">
-          <PlansTab type="ai" />
+          <PlansTab type="scan" />
         </div>
       )}
     </div>
