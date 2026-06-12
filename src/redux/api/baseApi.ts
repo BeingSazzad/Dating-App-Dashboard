@@ -20,6 +20,9 @@ export const api = createApi({
         "profile",
         "reportsStatistics",
         "subscription",
+        "cms",
+        "disclaimer",
+        "interest"
     ],
     endpoints: () => ({}),
 });

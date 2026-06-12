@@ -1,13 +1,5 @@
 import * as React from "react";
-import {
-  Edit3,
-  FileText,
-  Plus,
-  Save,
-  Search,
-  Tag,
-  Trash2,
-} from "lucide-react";
+import { Edit3, FileText, Plus, Save, Search, Tag, Trash2 } from "lucide-react";
 import { ConfirmDialog, DataTable, PageHeader, type Column } from "@/components/shared";
 import {
   Modal,
@@ -19,136 +11,51 @@ import {
 } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  useCreateDisclaimerMutation,
+  useCreateFAQMutation,
+  useCreateInterestsMutation,
+  useDeleteFAQMutation,
+  useDeleteInterestsMutation,
+  useGetDisclaimerQuery,
+  useGetFAQQuery,
+  useGetInterestsQuery,
+  useUpdateFAQMutation,
+  useUpdateInterestsMutation,
+  type DisclaimerItem,
+  type FaqItem,
+  type InterestItem,
+} from "@/redux/apiSlices/admin/cmsApi";
 
 type CmsTab = "faqs" | "interests" | "terms" | "privacy";
-type LegalContentKey = "terms" | "privacy";
+type DisclaimerTab = "terms" | "privacy";
 
-interface FaqItem {
-  id: string;
+interface FaqFormState {
   question: string;
   answer: string;
-  isPublished: boolean;
-  updatedAt: string;
 }
 
-interface InterestItem {
-  id: string;
+interface InterestFormState {
   name: string;
-  isActive: boolean;
-  updatedAt: string;
 }
-
-interface LegalContentItem {
-  key: LegalContentKey;
-  title: string;
-  body: string;
-  isPublished: boolean;
-  updatedAt: string;
-}
-
-type FaqFormState = Pick<FaqItem, "question" | "answer" | "isPublished">;
-type InterestFormState = Pick<InterestItem, "name" | "isActive">;
-type LegalContentFormState = Pick<LegalContentItem, "title" | "body" | "isPublished">;
-
-const initialFaqs: FaqItem[] = [
-  {
-    id: "faq_1",
-    question: "How does the AI face scan work?",
-    answer:
-      "Our AI reviews facial symmetry, proportions, skin tone and lighting to generate your private RATED score. Photos never leave your device unencrypted.",
-    isPublished: true,
-    updatedAt: "2026-06-05T09:30:00.000Z",
-  },
-  {
-    id: "faq_2",
-    question: "Can I retake my face scan?",
-    answer:
-      "Yes. Members can retake the scan when they upload a clearer photo or want to refresh their profile score.",
-    isPublished: true,
-    updatedAt: "2026-06-04T12:15:00.000Z",
-  },
-  {
-    id: "faq_3",
-    question: "Why can I only match in a score range?",
-    answer:
-      "RATED uses score ranges to keep matching balanced, intentional and more likely to produce mutual interest.",
-    isPublished: true,
-    updatedAt: "2026-06-03T17:45:00.000Z",
-  },
-  {
-    id: "faq_4",
-    question: "How do I cancel my subscription?",
-    answer:
-      "Open app settings, choose subscription, then follow the cancellation steps from your payment provider.",
-    isPublished: false,
-    updatedAt: "2026-06-01T11:00:00.000Z",
-  },
-];
-
-const initialInterests: InterestItem[] = [
-  "Wine",
-  "Pilates",
-  "Travel",
-  "Surf",
-  "Tennis",
-  "Jazz",
-  "Fashion",
-  "Cinema",
-  "Dance",
-  "Run",
-  "Books",
-  "Coffee",
-  "Yoga",
-].map((name, index) => ({
-  id: `interest_${index + 1}`,
-  name,
-  isActive: true,
-  updatedAt: "2026-06-05T10:00:00.000Z",
-}));
-
-const initialLegalContent: Record<LegalContentKey, LegalContentItem> = {
-  terms: {
-    key: "terms",
-    title: "Terms & Conditions",
-    body:
-      "By using RATED, members agree to behave respectfully, provide accurate profile information, and follow the community safety rules. Harassment, impersonation, spam, fraudulent payment activity, or attempts to bypass matching rules may result in account suspension or removal.\n\nSubscriptions, AI scans, and app features may change over time. Users are responsible for managing their account, subscription settings, and any personal information shared through the app.",
-    isPublished: true,
-    updatedAt: "2026-06-05T08:45:00.000Z",
-  },
-  privacy: {
-    key: "privacy",
-    title: "Privacy Policy",
-    body:
-      "RATED collects account details, profile content, photos, app activity, subscription status, and AI scan inputs to provide matchmaking and rating features. Data is used to operate the service, improve safety, prevent abuse, and personalize the app experience.\n\nUsers can request account deletion and data removal from app settings or support. Sensitive data should be handled securely and only shared with trusted service providers required to operate the platform.",
-    isPublished: true,
-    updatedAt: "2026-06-05T08:45:00.000Z",
-  },
-};
 
 const emptyFaqForm: FaqFormState = {
   question: "",
   answer: "",
-  isPublished: true,
 };
 
 const emptyInterestForm: InterestFormState = {
   name: "",
-  isActive: true,
 };
 
-function formatDate(value: string) {
+function formatDate(value?: string) {
+  if (!value) return "N/A";
   return new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -156,40 +63,54 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-function makeId(prefix: string) {
-  return `${prefix}_${Date.now().toString(36)}`;
+function normalizeDisclaimer(data: DisclaimerItem[] | DisclaimerItem | null | undefined) {
+  if (!data) return null;
+  return Array.isArray(data) ? data[0] ?? null : data;
 }
 
 export function CmsPage() {
   const [activeTab, setActiveTab] = React.useState<CmsTab>("faqs");
-  const [faqs, setFaqs] = React.useState<FaqItem[]>(initialFaqs);
-  const [interests, setInterests] = React.useState<InterestItem[]>(initialInterests);
-  const [legalContent, setLegalContent] =
-    React.useState<Record<LegalContentKey, LegalContentItem>>(initialLegalContent);
   const [faqSearch, setFaqSearch] = React.useState("");
   const [interestSearch, setInterestSearch] = React.useState("");
+
   const [faqEditorOpen, setFaqEditorOpen] = React.useState(false);
   const [interestEditorOpen, setInterestEditorOpen] = React.useState(false);
+  const [faqDeleteTarget, setFaqDeleteTarget] = React.useState<FaqItem | null>(null);
+  const [interestDeleteTarget, setInterestDeleteTarget] = React.useState<InterestItem | null>(null);
   const [editingFaq, setEditingFaq] = React.useState<FaqItem | null>(null);
   const [editingInterest, setEditingInterest] = React.useState<InterestItem | null>(null);
   const [faqForm, setFaqForm] = React.useState<FaqFormState>(emptyFaqForm);
   const [interestForm, setInterestForm] = React.useState<InterestFormState>(emptyInterestForm);
-  const [faqDeleteTarget, setFaqDeleteTarget] = React.useState<FaqItem | null>(null);
-  const [interestDeleteTarget, setInterestDeleteTarget] = React.useState<InterestItem | null>(null);
+
+  const { data: faqResponse, isLoading: faqLoading } = useGetFAQQuery();
+  const { data: interestResponse, isLoading: interestLoading } = useGetInterestsQuery();
+  const { data: termsResponse, isLoading: termsLoading } = useGetDisclaimerQuery({ type: "terms" });
+  const { data: privacyResponse, isLoading: privacyLoading } = useGetDisclaimerQuery({ type: "privacy" });
+
+  const [createFaq] = useCreateFAQMutation();
+  const [updateFaq] = useUpdateFAQMutation();
+  const [deleteFaq] = useDeleteFAQMutation();
+  const [createInterest] = useCreateInterestsMutation();
+  const [updateInterest] = useUpdateInterestsMutation();
+  const [deleteInterest] = useDeleteInterestsMutation();
+  const [createDisclaimer] = useCreateDisclaimerMutation();
+
+  const faqs = faqResponse?.data ?? [];
+  const interests = interestResponse?.data ?? [];
+  const terms = normalizeDisclaimer(termsResponse?.data);
+  const privacy = normalizeDisclaimer(privacyResponse?.data);
 
   const filteredFaqs = React.useMemo(() => {
-    const q = faqSearch.trim().toLowerCase();
-    if (!q) return faqs;
-    return faqs.filter((faq) =>
-      `${faq.question} ${faq.answer}`.toLowerCase().includes(q),
-    );
-  }, [faqSearch, faqs]);
+    const query = faqSearch.trim().toLowerCase();
+    if (!query) return faqs;
+    return faqs.filter((faq) => `${faq.question} ${faq.answer}`.toLowerCase().includes(query));
+  }, [faqs, faqSearch]);
 
   const filteredInterests = React.useMemo(() => {
-    const q = interestSearch.trim().toLowerCase();
-    if (!q) return interests;
-    return interests.filter((interest) => interest.name.toLowerCase().includes(q));
-  }, [interestSearch, interests]);
+    const query = interestSearch.trim().toLowerCase();
+    if (!query) return interests;
+    return interests.filter((interest) => interest.name.toLowerCase().includes(query));
+  }, [interests, interestSearch]);
 
   const openCreateFaq = () => {
     setEditingFaq(null);
@@ -199,11 +120,7 @@ export function CmsPage() {
 
   const openEditFaq = (faq: FaqItem) => {
     setEditingFaq(faq);
-    setFaqForm({
-      question: faq.question,
-      answer: faq.answer,
-      isPublished: faq.isPublished,
-    });
+    setFaqForm({ question: faq.question, answer: faq.answer });
     setFaqEditorOpen(true);
   };
 
@@ -215,90 +132,55 @@ export function CmsPage() {
 
   const openEditInterest = (interest: InterestItem) => {
     setEditingInterest(interest);
-    setInterestForm({
-      name: interest.name,
-      isActive: interest.isActive,
-    });
+    setInterestForm({ name: interest.name });
     setInterestEditorOpen(true);
   };
 
-  const saveFaq = (event: React.FormEvent<HTMLFormElement>) => {
+  const saveFaq = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const now = new Date().toISOString();
-    const payload: FaqFormState = {
+    const payload = {
       question: faqForm.question.trim(),
       answer: faqForm.answer.trim(),
-      isPublished: faqForm.isPublished,
     };
-
     if (!payload.question || !payload.answer) return;
 
-    setFaqs((current) => {
-      if (!editingFaq) {
-        return [{ id: makeId("faq"), ...payload, updatedAt: now }, ...current];
-      }
-
-      return current.map((faq) =>
-        faq.id === editingFaq.id ? { ...faq, ...payload, updatedAt: now } : faq,
-      );
-    });
+    if (editingFaq) {
+      await updateFaq({ id: editingFaq._id, ...payload }).unwrap().catch(() => undefined);
+    } else {
+      await createFaq(payload).unwrap().catch(() => undefined);
+    }
 
     setFaqEditorOpen(false);
   };
 
-  const saveInterest = (event: React.FormEvent<HTMLFormElement>) => {
+  const saveInterest = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = interestForm.name.trim();
     if (!name) return;
 
-    const now = new Date().toISOString();
-    setInterests((current) => {
-      if (!editingInterest) {
-        return [{ id: makeId("interest"), name, isActive: interestForm.isActive, updatedAt: now }, ...current];
-      }
-
-      return current.map((interest) =>
-        interest.id === editingInterest.id
-          ? { ...interest, name, isActive: interestForm.isActive, updatedAt: now }
-          : interest,
-      );
-    });
+    if (editingInterest) {
+      await updateInterest({ id: editingInterest._id, name }).unwrap().catch(() => undefined);
+    } else {
+      await createInterest({ name }).unwrap().catch(() => undefined);
+    }
 
     setInterestEditorOpen(false);
   };
 
-  const deleteFaq = () => {
+  const saveDisclaimer = async (type: DisclaimerTab, content: string) => {
+    await createDisclaimer({ type, content }).unwrap().catch(() => undefined);
+  };
+
+  const deleteFaqItem = async () => {
     if (!faqDeleteTarget) return;
-    setFaqs((current) => current.filter((faq) => faq.id !== faqDeleteTarget.id));
+    await deleteFaq(faqDeleteTarget._id).unwrap().catch(() => undefined);
     setFaqDeleteTarget(null);
   };
 
-  const deleteInterest = () => {
+  const deleteInterestItem = async () => {
     if (!interestDeleteTarget) return;
-    setInterests((current) =>
-      current.filter((interest) => interest.id !== interestDeleteTarget.id),
-    );
+    await deleteInterest(interestDeleteTarget._id).unwrap().catch(() => undefined);
     setInterestDeleteTarget(null);
-  };
-
-  const saveLegalContent = (
-    key: LegalContentKey,
-    payload: LegalContentFormState,
-  ) => {
-    const title = payload.title.trim();
-    const body = payload.body.trim();
-    if (!title || !body) return;
-
-    setLegalContent((current) => ({
-      ...current,
-      [key]: {
-        ...current[key],
-        title,
-        body,
-        isPublished: payload.isPublished,
-        updatedAt: new Date().toISOString(),
-      },
-    }));
   };
 
   const faqColumns: Column<FaqItem>[] = [
@@ -308,27 +190,14 @@ export function CmsPage() {
       cell: (faq) => (
         <div className="max-w-xl">
           <p className="font-semibold text-foreground">{faq.question}</p>
-          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-            {faq.answer}
-          </p>
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{faq.answer}</p>
         </div>
-      ),
-    },
-    {
-      key: "status",
-      header: "Status",
-      cell: (faq) => (
-        <Badge variant={faq.isPublished ? "success" : "secondary"}>
-          {faq.isPublished ? "Published" : "Draft"}
-        </Badge>
       ),
     },
     {
       key: "updatedAt",
       header: "Updated",
-      cell: (faq) => (
-        <span className="text-sm text-muted-foreground">{formatDate(faq.updatedAt)}</span>
-      ),
+      cell: (faq) => <span className="text-sm text-muted-foreground">{formatDate(faq.updatedAt)}</span>,
     },
     {
       key: "actions",
@@ -375,20 +244,14 @@ export function CmsPage() {
     },
     {
       key: "status",
-      header: "App Visibility",
-      cell: (interest) => (
-        <Badge variant={interest.isActive ? "success" : "secondary"}>
-          {interest.isActive ? "Active" : "Hidden"}
-        </Badge>
-      ),
+      header: "Status",
+      cell: (interest) => <Badge variant={interest.status === "active" ? "success" : "secondary"}>{interest.status}</Badge>,
     },
     {
       key: "updatedAt",
       header: "Updated",
       cell: (interest) => (
-        <span className="text-sm text-muted-foreground">
-          {formatDate(interest.updatedAt)}
-        </span>
+        <span className="text-sm text-muted-foreground">{formatDate(interest.updatedAt)}</span>
       ),
     },
     {
@@ -425,14 +288,10 @@ export function CmsPage() {
     <div className="space-y-6">
       <PageHeader
         title="CMS"
-        description="Manage Help Center FAQs, app interests, Terms & Conditions, and Privacy Policy content."
+        description="Manage FAQs, interests, Terms & Conditions, and Privacy Policy content."
         actions={
           activeTab === "faqs" || activeTab === "interests" ? (
-            <Button
-              type="button"
-              onClick={activeTab === "faqs" ? openCreateFaq : openCreateInterest}
-              className="gap-2"
-            >
+            <Button type="button" onClick={activeTab === "faqs" ? openCreateFaq : openCreateInterest} className="gap-2">
               <Plus className="h-4 w-4" />
               {activeTab === "faqs" ? "Add FAQ" : "Add Interest"}
             </Button>
@@ -451,7 +310,7 @@ export function CmsPage() {
         <TabsContent value="faqs" className="space-y-4">
           <SectionToolbar
             title="Help Center FAQs"
-            description="Create, edit, publish, or remove the FAQ items shown in the mobile Help Center."
+            description="Create, edit, or remove FAQs from the app Help Center."
             searchValue={faqSearch}
             searchPlaceholder="Search FAQs"
             onSearchChange={setFaqSearch}
@@ -461,16 +320,17 @@ export function CmsPage() {
           <DataTable
             columns={faqColumns}
             data={filteredFaqs}
-            rowKey={(faq) => faq.id}
-            emptyTitle="No FAQs found"
-            emptyDescription="Add a Help Center question or adjust your search."
+            rowKey={(faq) => faq._id}
+            emptyTitle={faqLoading ? "Loading FAQs" : "No FAQs found"}
+            emptyDescription="Add a question to populate the Help Center."
+            isLoading={faqLoading}
           />
         </TabsContent>
 
         <TabsContent value="interests" className="space-y-4">
           <SectionToolbar
-            title="App Interests"
-            description="Manage the chips users can choose from during onboarding and profile editing."
+            title="Interests"
+            description="Manage the interest tags users can choose in the app."
             searchValue={interestSearch}
             searchPlaceholder="Search interests"
             onSearchChange={setInterestSearch}
@@ -481,25 +341,17 @@ export function CmsPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Mobile Preview</CardTitle>
-              <CardDescription>
-                Active interests appear as selectable chips in the app.
-              </CardDescription>
+              <CardDescription>Active interests appear as selectable chips in the app.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {interests.map((interest) => (
-                  <button
-                    key={interest.id}
-                    type="button"
-                    disabled={!interest.isActive}
-                    className={`min-w-20 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                      interest.isActive
-                        ? "border-primary/30 bg-primary/90 text-primary-foreground shadow-sm"
-                        : "border-border bg-muted text-muted-foreground opacity-60"
-                    }`}
+                  <span
+                    key={interest._id}
+                    className="rounded-full border border-border bg-muted px-4 py-2 text-sm font-medium text-foreground"
                   >
                     {interest.name}
-                  </button>
+                  </span>
                 ))}
               </div>
             </CardContent>
@@ -508,25 +360,30 @@ export function CmsPage() {
           <DataTable
             columns={interestColumns}
             data={filteredInterests}
-            rowKey={(interest) => interest.id}
-            emptyTitle="No interests found"
-            emptyDescription="Add an interest or adjust your search."
+            rowKey={(interest) => interest._id}
+            emptyTitle={interestLoading ? "Loading interests" : "No interests found"}
+            emptyDescription="Add a new interest to populate the list."
+            isLoading={interestLoading}
           />
         </TabsContent>
 
         <TabsContent value="terms">
-          <LegalContentEditor
-            content={legalContent.terms}
-            description="Edit the Terms & Conditions page shown inside the mobile app."
-            onSave={(payload) => saveLegalContent("terms", payload)}
+          <DisclaimerEditor
+            title="Terms & Conditions"
+            description="Edit the terms text shown inside the app."
+            loading={termsLoading}
+            initialValue={terms?.content ?? ""}
+            onSave={(content) => saveDisclaimer("terms", content)}
           />
         </TabsContent>
 
         <TabsContent value="privacy">
-          <LegalContentEditor
-            content={legalContent.privacy}
-            description="Edit the Privacy Policy page shown inside the mobile app."
-            onSave={(payload) => saveLegalContent("privacy", payload)}
+          <DisclaimerEditor
+            title="Privacy Policy"
+            description="Edit the privacy policy text shown inside the app."
+            loading={privacyLoading}
+            initialValue={privacy?.content ?? ""}
+            onSave={(content) => saveDisclaimer("privacy", content)}
           />
         </TabsContent>
       </Tabs>
@@ -553,53 +410,44 @@ export function CmsPage() {
         open={Boolean(faqDeleteTarget)}
         onOpenChange={(open) => !open && setFaqDeleteTarget(null)}
         title="Delete FAQ"
-        description={`Delete "${faqDeleteTarget?.question}" from the Help Center CMS?`}
+        description={`Delete "${faqDeleteTarget?.question}" from the FAQ list?`}
         confirmLabel="Delete FAQ"
         destructive
-        onConfirm={deleteFaq}
+        onConfirm={deleteFaqItem}
       />
 
       <ConfirmDialog
         open={Boolean(interestDeleteTarget)}
         onOpenChange={(open) => !open && setInterestDeleteTarget(null)}
         title="Delete Interest"
-        description={`Delete "${interestDeleteTarget?.name}" from the app interest list?`}
+        description={`Delete "${interestDeleteTarget?.name}" from the interest list?`}
         confirmLabel="Delete Interest"
         destructive
-        onConfirm={deleteInterest}
+        onConfirm={deleteInterestItem}
       />
     </div>
   );
 }
 
-interface LegalContentEditorProps {
-  content: LegalContentItem;
+interface DisclaimerEditorProps {
+  title: string;
   description: string;
-  onSave: (payload: LegalContentFormState) => void;
+  initialValue: string;
+  loading?: boolean;
+  onSave: (content: string) => Promise<void> | void;
 }
 
-function LegalContentEditor({
-  content,
-  description,
-  onSave,
-}: LegalContentEditorProps) {
-  const [form, setForm] = React.useState<LegalContentFormState>({
-    title: content.title,
-    body: content.body,
-    isPublished: content.isPublished,
-  });
+function DisclaimerEditor({ title, description, initialValue, loading, onSave }: DisclaimerEditorProps) {
+  const [content, setContent] = React.useState(initialValue);
+  const [published, setPublished] = React.useState(true);
 
   React.useEffect(() => {
-    setForm({
-      title: content.title,
-      body: content.body,
-      isPublished: content.isPublished,
-    });
-  }, [content]);
+    setContent(initialValue);
+  }, [initialValue]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSave(form);
+    await onSave(content);
   };
 
   return (
@@ -610,83 +458,45 @@ function LegalContentEditor({
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <FileText className="h-5 w-5 text-primary" />
-                {content.title}
+                {title}
               </CardTitle>
               <CardDescription className="mt-1">{description}</CardDescription>
             </div>
-            <Badge variant={content.isPublished ? "success" : "secondary"}>
-              {content.isPublished ? "Published" : "Draft"}
+            <Badge variant={published ? "success" : "secondary"}>
+              {published ? "Published" : "Draft"}
             </Badge>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-5">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor={`${content.key}-title`}>Page Title</Label>
-                <Input
-                  id={`${content.key}-title`}
-                  value={form.title}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, title: event.target.value }))
-                  }
-                  required
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${title}-content`}>Content</Label>
+            <Textarea
+              id={`${title}-content`}
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              className="min-h-[360px] resize-y leading-6"
+              placeholder="Write disclaimer content..."
+              required
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor={`${content.key}-body`}>Page Content</Label>
-                <Textarea
-                  id={`${content.key}-body`}
-                  value={form.body}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, body: event.target.value }))
-                  }
-                  className="min-h-[360px] resize-y leading-6"
-                  required
-                />
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
-                <div>
-                  <Label htmlFor={`${content.key}-published`}>Published</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Turn off to keep this page hidden until legal copy is ready.
-                  </p>
-                </div>
-                <Switch
-                  id={`${content.key}-published`}
-                  checked={form.isPublished}
-                  onCheckedChange={(checked) =>
-                    setForm((current) => ({ ...current, isPublished: checked }))
-                  }
-                />
-              </div>
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+            <div>
+              <Label htmlFor={`${title}-published`}>Published</Label>
+              <p className="text-xs text-muted-foreground">Visual status for the editor preview.</p>
             </div>
-
-            <div className="rounded-xl border border-border bg-background p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-foreground">App Preview</p>
-                <span className="text-xs text-muted-foreground">
-                  Updated {formatDate(content.updatedAt)}
-                </span>
-              </div>
-              <div className="rounded-lg border border-border bg-card p-4">
-                <h3 className="font-display text-lg font-semibold">{form.title || "Page Title"}</h3>
-                <div className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
-                  {(form.body || "Page content preview").split("\n\n").map((paragraph, index) => (
-                    <p key={`${content.key}-preview-${index}`}>{paragraph}</p>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <Switch
+              id={`${title}-published`}
+              checked={published}
+              onCheckedChange={setPublished}
+            />
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={!form.title.trim() || !form.body.trim()}>
+            <Button type="submit" disabled={loading || !content.trim()}>
               <Save className="h-4 w-4" />
-              Save Changes
+              {loading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </CardContent>
@@ -750,23 +560,14 @@ interface FaqEditorDialogProps {
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }
 
-function FaqEditorDialog({
-  open,
-  editing,
-  form,
-  onOpenChange,
-  onFormChange,
-  onSubmit,
-}: FaqEditorDialogProps) {
+function FaqEditorDialog({ open, editing, form, onOpenChange, onFormChange, onSubmit }: FaqEditorDialogProps) {
   return (
     <Modal open={open} onOpenChange={onOpenChange}>
       <ModalContent className="max-w-2xl">
         <form onSubmit={onSubmit}>
           <ModalHeader>
             <ModalTitle>{editing ? "Edit FAQ" : "Add FAQ"}</ModalTitle>
-            <ModalDescription>
-              This content appears in the app Help Center accordion.
-            </ModalDescription>
+            <ModalDescription>This FAQ will be returned by the CMS API.</ModalDescription>
           </ModalHeader>
 
           <div className="my-5 space-y-4">
@@ -775,10 +576,8 @@ function FaqEditorDialog({
               <Input
                 id="faq-question"
                 value={form.question}
-                onChange={(event) =>
-                  onFormChange((current) => ({ ...current, question: event.target.value }))
-                }
-                placeholder="How does the AI face scan work?"
+                onChange={(event) => onFormChange((current) => ({ ...current, question: event.target.value }))}
+                placeholder="What is the eSIM & what are its benefits?"
                 required
               />
             </div>
@@ -788,28 +587,10 @@ function FaqEditorDialog({
               <Textarea
                 id="faq-answer"
                 value={form.answer}
-                onChange={(event) =>
-                  onFormChange((current) => ({ ...current, answer: event.target.value }))
-                }
-                placeholder="Write a clear customer-facing answer."
+                onChange={(event) => onFormChange((current) => ({ ...current, answer: event.target.value }))}
+                placeholder="Write the answer exactly as it should appear."
                 className="min-h-36"
                 required
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
-              <div>
-                <Label htmlFor="faq-published">Published</Label>
-                <p className="text-xs text-muted-foreground">
-                  Turn off to keep this FAQ as a draft.
-                </p>
-              </div>
-              <Switch
-                id="faq-published"
-                checked={form.isPublished}
-                onCheckedChange={(checked) =>
-                  onFormChange((current) => ({ ...current, isPublished: checked }))
-                }
               />
             </div>
           </div>
@@ -851,9 +632,7 @@ function InterestEditorDialog({
         <form onSubmit={onSubmit}>
           <ModalHeader>
             <ModalTitle>{editing ? "Edit Interest" : "Add Interest"}</ModalTitle>
-            <ModalDescription>
-              Manage the selectable interest chips users see inside the app.
-            </ModalDescription>
+            <ModalDescription>Interests are stored as simple name-only records.</ModalDescription>
           </ModalHeader>
 
           <div className="my-5 space-y-4">
@@ -862,27 +641,9 @@ function InterestEditorDialog({
               <Input
                 id="interest-name"
                 value={form.name}
-                onChange={(event) =>
-                  onFormChange((current) => ({ ...current, name: event.target.value }))
-                }
-                placeholder="Pilates"
+                onChange={(event) => onFormChange((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Music"
                 required
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
-              <div>
-                <Label htmlFor="interest-active">Active in app</Label>
-                <p className="text-xs text-muted-foreground">
-                  Hidden interests stay in CMS but do not appear in the app.
-                </p>
-              </div>
-              <Switch
-                id="interest-active"
-                checked={form.isActive}
-                onCheckedChange={(checked) =>
-                  onFormChange((current) => ({ ...current, isActive: checked }))
-                }
               />
             </div>
           </div>
