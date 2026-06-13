@@ -102,7 +102,7 @@ export function SettingsPage() {
     refetch: refetchAdmins,
   } = useGetAdminsListQuery({});
   const admins = (adminsResponse?.data ?? []) as AdminRow[];
-  console.log(admins)
+  // console.log(admins)
 
   const [createAdmin, { isLoading: isCreating }] = useCreateAdminMutation();
   const [updateAdmin, { isLoading: isUpdating }] = useUpdateAdminMutation();
