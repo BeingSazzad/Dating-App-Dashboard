@@ -17,6 +17,7 @@ import {
 import { formatDate, initials } from "@/lib/utils";
 import type { SortDirection, UserListItem, UserStatus } from "@/types";
 import { Badge } from "../ui/badge";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 interface UsersTableProps {
   data: UserListItem[];
@@ -46,7 +47,7 @@ export function UsersTable({
       cell: (u) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={u.image} alt={u.name ?? "User"} />
+            <AvatarImage src={getImageUrl(u.image)} alt={u.name ?? "User"} />
             <AvatarFallback>{initials(u?.name || "N/A")}</AvatarFallback>
           </Avatar>
           <span className="font-medium">{u.name ?? "N/A"}</span>
