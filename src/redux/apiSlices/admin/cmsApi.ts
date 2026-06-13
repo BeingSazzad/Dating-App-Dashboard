@@ -101,6 +101,7 @@ const cmsApi = api.injectEndpoints({
       query: () => ({
         url: "/interest",
         method: "GET",
+        // cache: "no-store"
       }),
       providesTags: ["interest"],
     }),

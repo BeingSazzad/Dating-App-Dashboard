@@ -11,10 +11,10 @@ export const reportsApi = api.injectEndpoints({
             },
             providesTags: ["reportsStatistics"],
         }),
-        getAllReports: builder.query<any, void>({
-            query: () => {
+        getAllReports: builder.query<any, { page: number; limit: number }>({
+            query: ({ page, limit }) => {
                 return {
-                    url: "/support?type=report",
+                    url: `/support?type=report&page=${page}&limit=${limit}`,
                     method: "GET",
                 }
             },

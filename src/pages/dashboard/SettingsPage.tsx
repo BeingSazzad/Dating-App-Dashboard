@@ -1,10 +1,6 @@
 import * as React from "react";
-import {
-  Loader2,
-  Plus,
-  Trash2,
-  UserCheck,
-} from "lucide-react";
+import { Loader2, Plus, Trash2, UserCog } from "lucide-react";
+import { toast } from "sonner";
 import {
   ConfirmDialog,
   DataTable,
@@ -17,14 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown";
 import {
   Modal as Dialog,
   ModalContent as DialogContent,
@@ -43,151 +31,242 @@ import {
 import {
   AdminProfileForm,
   ChangePasswordForm,
-  GeneralSettingsForm,
 } from "@/components/settings";
-import {
-  useGetAdminsQuery,
-  useCreateAdminMutation,
-  useUpdateAdminMutation,
-  useDeleteAdminMutation,
-} from "@/services";
-import { useAuth } from "@/hooks";
 import { initials } from "@/lib/utils";
-import type { AdminListItem } from "@/types";
+import {
+  useCreateAdminMutation,
+  useDeleteAdminMutation,
+  useGetAdminsListQuery,
+  useUpdateAdminMutation,
+} from "@/redux/apiSlices/admin/settingsApi";
+import { useGetProfileQuery } from "@/redux/apiSlices/authSlice";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 const TABS = [
   { id: "profile", label: "Profile & Password" },
   { id: "admins", label: "Admin Role Management" },
-  { id: "config", label: "System Config" },
+  // { id: "config", label: "System Config" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+type AdminRole = "SUPER_ADMIN" | "ADMIN";
 
-const ROLE_VARIANTS: Record<AdminListItem["role"], "default" | "success" | "secondary"> = {
-  super_admin: "default", // primary purple
-  admin: "success",      // green
-  moderator: "secondary",  // gray/muted
+interface AdminRow {
+  _id: string;
+  name: string;
+  role: AdminRole;
+  email: string;
+  image?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface AdminFormState {
+  name: string;
+  email: string;
+  password: string;
+  role: AdminRole;
+  imageFile: File | null;
+  imagePreview: string;
+}
+
+const emptyForm: AdminFormState = {
+  name: "",
+  email: "",
+  password: "",
+  role: "ADMIN",
+  imageFile: null,
+  imagePreview: "",
 };
 
-const ROLE_LABELS: Record<AdminListItem["role"], string> = {
-  super_admin: "Super Admin",
-  admin: "Admin",
-  moderator: "Moderator",
-};
+
+function roleLabel(role: string | null | undefined) {
+  return role
+    ?.toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ") || "--";
+}
 
 export function SettingsPage() {
-  const { user: currentUser } = useAuth();
   const [tab, setTab] = React.useState<TabId>("profile");
 
-  // Admins API
-  const { data: admins = [], isLoading, isFetching } = useGetAdminsQuery();
+  const { data: profileResponse } = useGetProfileQuery({});
+  const profile = profileResponse?.data ?? null;
+
+  const {
+    data: adminsResponse,
+    isLoading: adminsLoading,
+    isFetching: adminsFetching,
+    refetch: refetchAdmins,
+  } = useGetAdminsListQuery({});
+  const admins = (adminsResponse?.data ?? []) as AdminRow[];
+  console.log(admins)
+
   const [createAdmin, { isLoading: isCreating }] = useCreateAdminMutation();
-  const [updateAdmin] = useUpdateAdminMutation();
+  const [updateAdmin, { isLoading: isUpdating }] = useUpdateAdminMutation();
   const [deleteAdmin, { isLoading: isDeleting }] = useDeleteAdminMutation();
 
-  // Add Admin dialog state
-  const [addOpen, setAddOpen] = React.useState(false);
-  const [addForm, setAddForm] = React.useState<{ name: string; email: string; role: AdminListItem["role"] }>({
-    name: "",
-    email: "",
-    role: "moderator",
-  });
+  const [editorOpen, setEditorOpen] = React.useState(false);
+  const [editingAdmin, setEditingAdmin] = React.useState<AdminRow | null>(null);
+  const [adminForm, setAdminForm] = React.useState<AdminFormState>(emptyForm);
+  const [deleteTarget, setDeleteTarget] = React.useState<AdminRow | null>(null);
 
-  // Delete confirmation state
-  const [deleteTarget, setDeleteTarget] = React.useState<AdminListItem | null>(null);
+  const openCreateAdmin = () => {
+    setEditingAdmin(null);
+    setAdminForm(emptyForm);
+    setEditorOpen(true);
+  };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!addForm.name.trim() || !addForm.email.trim()) return;
-    await createAdmin(addForm)
-      .unwrap()
-      .catch(() => undefined);
-    setAddForm({ name: "", email: "", role: "moderator" });
-    setAddOpen(false);
+  const openEditAdmin = (admin: AdminRow) => {
+    setEditingAdmin(admin);
+    setAdminForm({
+      name: admin.name,
+      email: admin.email,
+      password: "",
+      role: admin.role,
+      imageFile: null,
+      imagePreview: getImageUrl(admin.image || ""),
+    });
+    setEditorOpen(true);
+  };
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const preview = URL.createObjectURL(file);
+    setAdminForm((current) => ({
+      ...current,
+      imageFile: file,
+      imagePreview: preview,
+    }));
+
+    event.target.value = "";
+  };
+
+  const handleSubmitAdmin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const payload = new FormData();
+    payload.append("name", adminForm.name.trim());
+    payload.append("email", adminForm.email.trim());
+    payload.append("password", adminForm.password);
+    payload.append("role", adminForm.role);
+    if (adminForm.imageFile) {
+      payload.append("image", adminForm.imageFile);
+    }
+
+    try {
+      if (editingAdmin) {
+        toast.promise(updateAdmin({ id: editingAdmin._id, data: payload }).unwrap(), {
+          loading: "Updating admin...",
+          success: (res) => {
+            console.log(res)
+            setEditorOpen(false);
+            setEditingAdmin(null);
+            setAdminForm(emptyForm);
+            return res?.data?.message || "Admin updated successfully.";
+          },
+          error: (err) => {
+            return err?.data?.message ?? "Failed to update admin."
+          },
+        });
+        return;
+      }
+
+      toast.promise(createAdmin(payload).unwrap(), {
+        loading: "Creating admin...",
+        success: (res) => {
+          console.log(res)
+          setEditorOpen(false);
+          setAdminForm(emptyForm);
+          return res?.data?.message || "Admin created successfully.";
+        },
+        error: (err) => {
+          console.log(err)
+          return err?.data?.message ?? "Failed to create admin."
+        },
+      });
+    } catch (error) {
+      if (error) {
+        console.log(error)
+        toast.error("Failed to update admin.")
+      } else {
+        toast.error("Failed to update admin.")
+      }
+    }
   };
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
-    await deleteAdmin(deleteTarget.id)
-      .unwrap()
-      .catch(() => undefined);
-    setDeleteTarget(null);
+
+    toast.promise(deleteAdmin(deleteTarget._id).unwrap(), {
+      loading: "Deleting admin...",
+      success: () => {
+        setDeleteTarget(null);
+        refetchAdmins();
+        return "Admin deleted successfully.";
+      },
+      error: "Failed to delete admin.",
+    });
   };
 
-  const columns: Column<AdminListItem>[] = [
+  const columns: Column<AdminRow>[] = [
     {
       key: "name",
       header: "Admin User",
-      cell: (a) => (
+      cell: (admin) => (
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={a.avatar} alt={a.name} />
-            <AvatarFallback>{initials(a.name)}</AvatarFallback>
+            <AvatarImage src={getImageUrl(admin.image || "")} alt={admin.name} />
+            <AvatarFallback>{initials(admin.name)}</AvatarFallback>
           </Avatar>
           <div>
-            <span className="font-semibold text-sm block">{a.name}</span>
-            {a.id === currentUser?.id && (
-              <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded">You</span>
-            )}
+            <span className="font-semibold text-sm block">{admin.name}</span>
+            <span className="text-xs text-muted-foreground">{admin.email}</span>
           </div>
         </div>
       ),
     },
     {
-      key: "email",
-      header: "Email Address",
-      cell: (a) => <span className="text-muted-foreground text-sm font-mono">{a.email}</span>,
-    },
-    {
       key: "role",
       header: "Role Level",
-      cell: (a) => {
-        const disabled = a.id === currentUser?.id; // Prevent updating own role
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild disabled={disabled}>
-              <button className={`focus:outline-none ${disabled ? "cursor-default" : "cursor-pointer hover:opacity-80"}`}>
-                <Badge variant={ROLE_VARIANTS[a.role]} className="capitalize">
-                  {ROLE_LABELS[a.role]}
-                </Badge>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Change Role Level</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => updateAdmin({ id: a.id, role: "super_admin" })}>
-                Super Admin
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => updateAdmin({ id: a.id, role: "admin" })}>
-                Admin
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => updateAdmin({ id: a.id, role: "moderator" })}>
-                Moderator
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: (admin) => (
+        <Badge variant={admin.role === "SUPER_ADMIN" ? "default" : "secondary"}>
+          {roleLabel(admin.role)}
+        </Badge>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (admin) => (
+        <Badge variant={admin.status === "active" ? "success" : "secondary"}>
+          {admin.status ?? "active"}
+        </Badge>
+      ),
     },
     {
       key: "actions",
       header: "",
       align: "right",
-      cell: (a) => {
-        const isSelf = a.id === currentUser?.id;
-        return (
+      cell: (admin) => (
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => openEditAdmin(admin)}>
+            Edit
+          </Button>
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => setDeleteTarget(a)}
-            disabled={isSelf}
-            className="text-destructive hover:bg-destructive/10 disabled:opacity-30"
-            aria-label="Remove Admin"
+            onClick={() => setDeleteTarget(admin)}
+            className="text-destructive hover:bg-destructive/10"
+            aria-label={`Delete ${admin.name}`}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
-        );
-      },
+        </div>
+      ),
     },
   ];
 
@@ -195,147 +274,179 @@ export function SettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Settings"
-        description="System rules, configuration settings, and administrator account privileges."
+        description="Manage the signed-in profile, security, system preferences, and administrative accounts."
       />
 
-      {/* Tab bar */}
       <div className="flex items-center gap-1 rounded-xl border border-border bg-muted/40 p-1 w-fit">
-        {TABS.map((t) => (
+        {TABS.map((item) => (
           <button
-            key={t.id}
+            key={item.id}
             type="button"
-            onClick={() => setTab(t.id)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              tab === t.id
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+            onClick={() => setTab(item.id)}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === item.id
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+              }`}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
 
-      {/* Config Tab content */}
-      {tab === "config" && (
+      {/* {tab === "config" && (
         <div className="space-y-6">
           <GeneralSettingsForm />
         </div>
-      )}
+      )} */}
 
-      {/* Profile & Password Tab content */}
       {tab === "profile" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <AdminProfileForm />
+          <AdminProfileForm user={profile} />
           <ChangePasswordForm />
         </div>
       )}
 
-      {/* Admin Management Tab content */}
       {tab === "admins" && (
-        <Card className="p-4 sm:p-5 space-y-4">
+        <Card className="space-y-4 p-4 sm:p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-primary" />
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <UserCog className="h-5 w-5 text-primary" />
                 Administrative Accounts
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                Assign and moderate system backend credentials.
+                Create, edit, and remove backend admin accounts.
               </CardDescription>
             </div>
-            <Button onClick={() => setAddOpen(true)} className="gap-2 self-start sm:self-auto">
-              <Plus className="h-4 w-4" /> Add Administrator
+            <Button onClick={openCreateAdmin} className="gap-2 self-start sm:self-auto">
+              <Plus className="h-4 w-4" />
+              Add Administrator
             </Button>
           </div>
 
           <DataTable
             columns={columns}
             data={admins}
-            rowKey={(a) => a.id}
-            isLoading={isLoading || isFetching}
-            emptyTitle="No administrators configured"
-            emptyDescription="Unusual state. Ensure your local mock data is populated."
+            rowKey={(admin) => admin._id}
+            isLoading={adminsLoading || adminsFetching}
+            emptyTitle="No administrators found"
+            emptyDescription="Create the first admin account to populate this list."
           />
         </Card>
       )}
 
-      {/* Add Admin Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
         <DialogContent className="max-w-md">
-          <form onSubmit={handleCreate}>
+          <form onSubmit={handleSubmitAdmin}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-primary" />
-                Add New Administrator
+                <UserCog className="h-5 w-5 text-primary" />
+                {editingAdmin ? "Edit Administrator" : "Add New Administrator"}
               </DialogTitle>
               <DialogDescription>
-                Assign system moderation capabilities by generating a new team profile.
+                {editingAdmin
+                  ? "Update the admin profile and access role."
+                  : "Create a new admin account using the supplied form data."}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 my-4">
+            <div className="my-4 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="new-admin-name">Full Name</Label>
+                <Label htmlFor="admin-name">Name</Label>
                 <Input
-                  id="new-admin-name"
-                  placeholder="e.g. Robin Hood"
-                  value={addForm.name}
-                  onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
+                  id="admin-name"
+                  value={adminForm.name}
+                  onChange={(e) => setAdminForm((current) => ({ ...current, name: e.target.value }))}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="new-admin-email">Email Address</Label>
+                <Label htmlFor="admin-email">Email</Label>
                 <Input
-                  id="new-admin-email"
+                  id="admin-email"
                   type="email"
-                  placeholder="e.g. robin@ratedapp.io"
-                  value={addForm.email}
-                  onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))}
+                  value={adminForm.email}
+                  onChange={(e) => setAdminForm((current) => ({ ...current, email: e.target.value }))}
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="new-admin-role">System Role Level</Label>
+                <Label htmlFor="admin-password">Password</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  value={adminForm.password}
+                  onChange={(e) => setAdminForm((current) => ({ ...current, password: e.target.value }))}
+                  required={!editingAdmin}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="admin-role">Role</Label>
                 <Select
-                  value={addForm.role}
-                  onValueChange={(v) => setAddForm((f) => ({ ...f, role: v as AdminListItem["role"] }))}
+                  value={adminForm.role}
+                  onValueChange={(value) => setAdminForm((current) => ({ ...current, role: value as AdminRole }))}
                 >
-                  <SelectTrigger id="new-admin-role">
+                  <SelectTrigger id="admin-role">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="super_admin">Super Admin (Full Access)</SelectItem>
-                    <SelectItem value="admin">Admin (System Config & Users)</SelectItem>
-                    <SelectItem value="moderator">Moderator (Reports & Warns)</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                    <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="admin-image">Profile Image</Label>
+                <Input
+                  id="admin-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+                {adminForm.imagePreview ? (
+                  <div className="flex items-center gap-3 pt-1">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={getImageUrl(adminForm.imagePreview || "")} alt={adminForm.name || "Admin"} />
+                      <AvatarFallback>{initials(adminForm.name || "Admin")}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs text-muted-foreground">Selected image preview</span>
+                  </div>
+                ) : null}
               </div>
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setAddOpen(false)}>
+              <Button type="button" variant="ghost" onClick={() => setEditorOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isCreating || !addForm.name.trim() || !addForm.email.trim()}>
-                {isCreating && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                Create Account
+              <Button
+                type="submit"
+                disabled={
+                  isCreating ||
+                  isUpdating ||
+                  !adminForm.name.trim() ||
+                  !adminForm.email.trim() ||
+                  (!editingAdmin && !adminForm.password.trim())
+                }
+              >
+                {(isCreating || isUpdating) && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                {editingAdmin ? "Update Admin" : "Create Admin"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Admin Confirmation Dialog */}
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        onOpenChange={(o) => !o && setDeleteTarget(null)}
-        title="Revoke Admin Access"
-        description={`Are you sure you want to delete ${deleteTarget?.name}'s administrator privileges? They will no longer be able to log in.`}
-        confirmLabel="Revoke Access"
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Admin"
+        description={`Are you sure you want to delete ${deleteTarget?.name}? This action cannot be undone.`}
+        confirmLabel="Delete"
         destructive
         loading={isDeleting}
         onConfirm={handleDeleteConfirm}

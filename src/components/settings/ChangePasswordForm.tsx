@@ -1,5 +1,6 @@
 import * as React from "react";
 import { KeyRound, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -10,32 +11,41 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useChangePasswordMutation } from "@/redux/apiSlices/authSlice";
 
 export function ChangePasswordForm() {
-  const [current, setCurrent] = React.useState("");
-  const [next, setNext] = React.useState("");
-  const [confirm, setConfirm] = React.useState("");
-  const [saving, setSaving] = React.useState(false);
-  const [message, setMessage] = React.useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = React.useState("");
+  const [newPassword, setNewPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [changePassword, { isLoading }] = useChangePasswordMutation();
 
-  const mismatch = confirm.length > 0 && next !== confirm;
-  const tooShort = next.length > 0 && next.length < 8;
+  const mismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const tooShort = newPassword.length > 0 && newPassword.length < 8;
   const canSave =
-    current.length > 0 &&
-    next.length >= 8 &&
-    next === confirm &&
-    !saving;
+    currentPassword.trim().length > 0 &&
+    newPassword.trim().length >= 8 &&
+    newPassword === confirmPassword &&
+    !isLoading;
 
   const handleSave = async () => {
     if (!canSave) return;
-    setSaving(true);
-    setMessage(null);
-    await new Promise((r) => setTimeout(r, 600));
-    setSaving(false);
-    setCurrent("");
-    setNext("");
-    setConfirm("");
-    setMessage("Password updated successfully.");
+
+    const payload = {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    };
+
+    toast.promise(changePassword(payload).unwrap(), {
+      loading: "Updating password...",
+      success: () => {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        return "Password updated successfully.";
+      },
+      error: "Failed to update password.",
+    });
   };
 
   return (
@@ -43,7 +53,7 @@ export function ChangePasswordForm() {
       <CardHeader>
         <CardTitle>Change Password</CardTitle>
         <CardDescription>
-          Use at least 8 characters with a mix of letters and numbers.
+          Use your current password and confirm the new one before saving.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -52,19 +62,20 @@ export function ChangePasswordForm() {
           <Input
             id="current-pw"
             type="password"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
             autoComplete="current-password"
           />
         </div>
+
         <div className="grid gap-5 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="new-pw">New password</Label>
             <Input
               id="new-pw"
               type="password"
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
               autoComplete="new-password"
             />
             {tooShort && (
@@ -73,13 +84,14 @@ export function ChangePasswordForm() {
               </p>
             )}
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="confirm-pw">Confirm password</Label>
             <Input
               id="confirm-pw"
               type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               autoComplete="new-password"
             />
             {mismatch && (
@@ -90,14 +102,9 @@ export function ChangePasswordForm() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          {message ? (
-            <p className="text-sm text-success">{message}</p>
-          ) : (
-            <span />
-          )}
+        <div className="flex justify-end">
           <Button onClick={handleSave} disabled={!canSave}>
-            {saving ? (
+            {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <KeyRound className="h-4 w-4" />

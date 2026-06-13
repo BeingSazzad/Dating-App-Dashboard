@@ -131,6 +131,7 @@ export function DataTable<T>({
           )}
         </TableBody>
       </Table>
+
     </div>
   );
 }

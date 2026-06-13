@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
-import { DataTable, SearchInput, type Column } from "@/components/shared";
-import { useDebounce } from "@/hooks";
+import { DataTable, type Column } from "@/components/shared";
 import { appConfig } from "@/config";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { useGetAllSubscribersQuery } from "@/redux/apiSlices/admin/subscriptionApi";
@@ -40,17 +39,17 @@ type SubscribersResponse = {
 export function TransactionsTable() {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
-  const [search, setSearch] = React.useState("");
-  const debouncedSearch = useDebounce(search, 300);
+  // const [search, setSearch] = React.useState("");
+  // const debouncedSearch = useDebounce(search, 300);
 
-  React.useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  // React.useEffect(() => {
+  //   setPage(1);
+  // }, [debouncedSearch]);
 
   const { data, isFetching } = useGetAllSubscribersQuery({
     page,
     limit: 10,
-    searchTerms: debouncedSearch,
+    // searchTerms: debouncedSearch,
   }) as { data?: SubscribersResponse; isFetching: boolean };
 
   const rows = data?.data ?? [];
@@ -122,13 +121,13 @@ export function TransactionsTable() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Search by user..."
         />
-      </div>
+      </div> */}
 
       <DataTable
         columns={columns}

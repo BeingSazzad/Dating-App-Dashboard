@@ -9,12 +9,19 @@ import { ReportsTable } from "@/components/reports";
 import type { UserReport } from "@/types";
 import { useGetAllReportsQuery, useReportsStatisticsQuery } from "@/redux/apiSlices/admin/reportsApi";
 import Spinner from "@/components/ui/Spinner";
+import { appConfig } from "@/config";
+import { Pagination } from "@/components/ui/pagination";
 
 export function ReportsPage() {
+  const [page, setPage] = React.useState(1);
   const navigate = useNavigate();
   const { data: reportsStatsRes, isLoading: isStatsLoading } = useReportsStatisticsQuery()
-  const { data: reportsData, isLoading: isReportsLoading, refetch } = useGetAllReportsQuery();
+  const { data: reportsData, isLoading: isReportsLoading, refetch } = useGetAllReportsQuery({
+    page,
+    limit: appConfig.defaultPageSize,
+  });
   const reports = reportsData?.data ?? [];
+  const pagination = reportsData?.pagination ?? {};
   // const [updateReport] = useUpdateReportMutation();
   const updateReport = ({ id, status }: { id: string; status: string }) => {
     console.log("id", id, "status", status)
@@ -53,7 +60,7 @@ export function ReportsPage() {
       </div>
 
       {/* Reports Table */}
-      <Card className="p-4 sm:p-5">
+      <Card className="p-4 sm:p-5 ">
         <ReportsTable
           data={reports}
           isLoading={isReportsLoading}
@@ -63,6 +70,16 @@ export function ReportsPage() {
           onResolveClick={(r) => updateReport({ id: getReportId(r), status: "resolved" })}
           onIgnoreClick={(r) => updateReport({ id: getReportId(r), status: "ignored" })}
         />
+        <div className="flex justify-end pt-4">
+          {pagination?.total > 1 && (
+            <Pagination
+              page={pagination?.page ?? 1}
+              pageSize={pagination?.limit ?? appConfig.defaultPageSize}
+              total={pagination?.total ?? 0}
+              onPageChange={(p) => setPage(p)}
+            />
+          )}
+        </div>
       </Card>
 
       {/* Send Warning */}

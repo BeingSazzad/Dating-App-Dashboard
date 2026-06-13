@@ -76,10 +76,11 @@ const authSlice = api.injectEndpoints({
             query: (data) => {
                 return {
                     method: 'PATCH',
-                    url: '/user',
+                    url: '/user/profile',
                     body: data,
                 };
             },
+            invalidatesTags: ['profile'],
         }),
 
         getProfile: builder.query({

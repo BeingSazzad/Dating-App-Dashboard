@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -32,6 +31,7 @@ import {
   type FaqItem,
   type InterestItem,
 } from "@/redux/apiSlices/admin/cmsApi";
+import { toast } from "sonner";
 
 type CmsTab = "faqs" | "interests" | "terms" | "privacy";
 type DisclaimerTab = "terms" | "privacy";
@@ -83,7 +83,7 @@ export function CmsPage() {
   const [interestForm, setInterestForm] = React.useState<InterestFormState>(emptyInterestForm);
 
   const { data: faqResponse, isLoading: faqLoading } = useGetFAQQuery();
-  const { data: interestResponse, isLoading: interestLoading } = useGetInterestsQuery();
+  const { data: interestResponse, isLoading: interestLoading, refetch: interestRefetch } = useGetInterestsQuery();
   const { data: termsResponse, isLoading: termsLoading } = useGetDisclaimerQuery({ type: "terms" });
   const { data: privacyResponse, isLoading: privacyLoading } = useGetDisclaimerQuery({ type: "privacy" });
 
@@ -145,12 +145,25 @@ export function CmsPage() {
     if (!payload.question || !payload.answer) return;
 
     if (editingFaq) {
-      await updateFaq({ id: editingFaq._id, ...payload }).unwrap().catch(() => undefined);
+      toast.promise(updateFaq({ id: editingFaq._id, ...payload }).unwrap(), {
+        loading: "Updating FAQ...",
+        success: () => {
+          setFaqEditorOpen(false);
+          return "FAQ Updated successfully!"
+        },
+        error: "Failed to update!",
+      });
     } else {
-      await createFaq(payload).unwrap().catch(() => undefined);
+      toast.promise(createFaq(payload).unwrap(), {
+        loading: "Creating FAQ...",
+        success: () => {
+          setFaqEditorOpen(false);
+          return "FAQ created successfully!"
+        },
+        error: "Failed to create FAQ!",
+      });
     }
 
-    setFaqEditorOpen(false);
   };
 
   const saveInterest = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -159,12 +172,26 @@ export function CmsPage() {
     if (!name) return;
 
     if (editingInterest) {
-      await updateInterest({ id: editingInterest._id, name }).unwrap().catch(() => undefined);
+      toast.promise(updateInterest({ id: editingInterest._id, name }).unwrap(), {
+        loading: "Updating Interest...",
+        success: () => {
+          interestRefetch();
+          setInterestEditorOpen(false);
+          return "Interest updated successfully!"
+        },
+        error: "Failed to update!",
+      });
     } else {
-      await createInterest({ name }).unwrap().catch(() => undefined);
+      toast.promise(createInterest({ name }).unwrap(), {
+        loading: "Creating Interest...",
+        success: () => {
+          interestRefetch();
+          setInterestEditorOpen(false);
+          return "Interest created successfully!"
+        },
+        error: "Failed to create Interest!",
+      });
     }
-
-    setInterestEditorOpen(false);
   };
 
   const saveDisclaimer = async (type: DisclaimerTab, content: string) => {
@@ -372,7 +399,7 @@ export function CmsPage() {
             title="Terms & Conditions"
             description="Edit the terms text shown inside the app."
             loading={termsLoading}
-            initialValue={terms?.content ?? ""}
+            initialValue={terms ?? ""}
             onSave={(content) => saveDisclaimer("terms", content)}
           />
         </TabsContent>
@@ -382,7 +409,7 @@ export function CmsPage() {
             title="Privacy Policy"
             description="Edit the privacy policy text shown inside the app."
             loading={privacyLoading}
-            initialValue={privacy?.content ?? ""}
+            initialValue={privacy ?? ""}
             onSave={(content) => saveDisclaimer("privacy", content)}
           />
         </TabsContent>
@@ -432,18 +459,19 @@ export function CmsPage() {
 interface DisclaimerEditorProps {
   title: string;
   description: string;
-  initialValue: string;
+  initialValue: string | any;
   loading?: boolean;
   onSave: (content: string) => Promise<void> | void;
 }
 
 function DisclaimerEditor({ title, description, initialValue, loading, onSave }: DisclaimerEditorProps) {
   const [content, setContent] = React.useState(initialValue);
-  const [published, setPublished] = React.useState(true);
+  // const [published, setPublished] = React.useState(true);
 
   React.useEffect(() => {
     setContent(initialValue);
   }, [initialValue]);
+  // console.log(initialValue, typeof initialValue)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -462,9 +490,9 @@ function DisclaimerEditor({ title, description, initialValue, loading, onSave }:
               </CardTitle>
               <CardDescription className="mt-1">{description}</CardDescription>
             </div>
-            <Badge variant={published ? "success" : "secondary"}>
+            {/* <Badge variant={published ? "success" : "secondary"}>
               {published ? "Published" : "Draft"}
-            </Badge>
+            </Badge> */}
           </div>
         </CardHeader>
 
@@ -481,7 +509,7 @@ function DisclaimerEditor({ title, description, initialValue, loading, onSave }:
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+          {/* <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
             <div>
               <Label htmlFor={`${title}-published`}>Published</Label>
               <p className="text-xs text-muted-foreground">Visual status for the editor preview.</p>
@@ -491,7 +519,7 @@ function DisclaimerEditor({ title, description, initialValue, loading, onSave }:
               checked={published}
               onCheckedChange={setPublished}
             />
-          </div>
+          </div> */}
 
           <div className="flex justify-end">
             <Button type="submit" disabled={loading || !content.trim()}>
