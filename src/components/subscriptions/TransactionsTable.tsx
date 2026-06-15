@@ -7,6 +7,7 @@ import { DataTable, type Column } from "@/components/shared";
 import { appConfig } from "@/config";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { useGetAllSubscribersQuery } from "@/redux/apiSlices/admin/subscriptionApi";
+import { getImageUrl } from "@/utils/getImageUrl";
 
 type SubscriberUser = {
   _id?: string | null;
@@ -60,7 +61,7 @@ export function TransactionsTable() {
       header: "User",
       cell: (t) => {
         const userName = t.user?.name ?? "N/A";
-        const userImage = t.user?.image ?? undefined;
+        const userImage = t.user?.image ? getImageUrl(t.user?.image) : undefined;
 
         return (
           <div className="flex items-center gap-3">
