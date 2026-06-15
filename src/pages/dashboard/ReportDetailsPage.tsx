@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -218,9 +218,9 @@ export function ReportDetailsPage() {
             </p>
 
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
+              <Link to={`/users/${reporter?._id}`} className="flex items-center gap-3">
                 <Avatar className="h-12 w-12 border border-border">
-                  <AvatarImage src={reporter?.image ?? ""} alt={reporterName} />
+                  <AvatarImage src={reporter?.image ? getImageUrl(reporter?.image) : ""} alt={reporterName} />
                   <AvatarFallback>{initials(reporterName)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -230,9 +230,9 @@ export function ReportDetailsPage() {
                     {reporter?.status ? ` · ${reporter.status}` : ""}
                   </p>
                 </div>
-              </div>
+              </Link>
 
-              <div className="flex items-center gap-3">
+              <Link to={reportedUser?._id ? `/users/${reportedUser._id}` : ""} className="flex items-center gap-3">
                 <Avatar className="h-12 w-12 border border-border">
                   <AvatarImage src={reportedUser?.image ?? ""} alt={reportedUserName} />
                   <AvatarFallback>{initials(reportedUserName)}</AvatarFallback>
@@ -244,7 +244,7 @@ export function ReportDetailsPage() {
                     {reportedUser?.status ? ` · ${reportedUser.status}` : ""}
                   </p>
                 </div>
-              </div>
+              </Link>
             </div>
           </Card>
 
@@ -311,13 +311,13 @@ export function ReportDetailsPage() {
             <DialogTitle>Report Images</DialogTitle>
           </DialogHeader>
           {images.length > 0 ? (
-            <div className="grid gap-3">
+            <div className="grid gap-3 grid-cols-3">
               {images.map((src, index) => (
                 <img
                   key={`${src}-modal-${index}`}
-                  src={src}
+                  src={getImageUrl(src)}
                   alt={`Report image ${index + 1}`}
-                  className="h-auto w-full rounded-lg"
+                  className="h-64 w-full rounded-lg object-cover"
                 />
               ))}
             </div>
